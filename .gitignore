@@ -224,3 +224,4 @@ htmlcov/
 .coverage
 glossary.md
 *~
+*.json1.gz
