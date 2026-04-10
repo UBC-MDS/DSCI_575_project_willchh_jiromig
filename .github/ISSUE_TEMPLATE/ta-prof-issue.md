@@ -8,8 +8,8 @@ assignees: ShrutiSasi, eddeness, jiroamato, lukeni777
 
 ## What needs to be done:
 
-- [ ] 
-- [ ] 
+- [ ]
+- [ ]
 
 --
 

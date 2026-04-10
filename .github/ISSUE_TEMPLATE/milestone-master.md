@@ -17,7 +17,7 @@ assignees: ShrutiSasi, eddeness, jiroamato, lukeni777
 
 ---
 
-## Pre-Development Setup 
+## Pre-Development Setup
 
 <remove_section_if_not_needed>
 

@@ -9,7 +9,7 @@ title: "[Task Name]"
 <enter_task_description_here>
 
 ## Tasks
-- [ ] 
+- [ ]
 
 ## Acceptance Criteria
-- 
+-
