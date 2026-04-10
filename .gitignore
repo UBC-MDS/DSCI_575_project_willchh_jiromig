@@ -225,3 +225,4 @@ htmlcov/
 glossary.md
 *~
 *.json1.gz
+*.zip
