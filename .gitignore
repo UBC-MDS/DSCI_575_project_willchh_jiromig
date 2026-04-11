@@ -211,6 +211,8 @@ CLAUDE.md
 AGENTS.md
 .claude/settings.local.json
 .superpowers/
+2026-*-milestone*-plan.md
+2026-*-milestone*-design.md
 
 # Misc
 *.env
