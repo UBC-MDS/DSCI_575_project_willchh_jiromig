@@ -3,7 +3,10 @@ from pathlib import Path
 
 import faiss
 import numpy as np
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
+
+load_dotenv()
 
 
 class SemanticRetriever:
