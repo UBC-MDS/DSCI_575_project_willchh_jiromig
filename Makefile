@@ -1,4 +1,4 @@
-.PHONY: setup app test lint
+.PHONY: setup app test lint format
 
 setup:
 	python -m venv .venv
@@ -14,3 +14,6 @@ test:
 
 lint:
 	pre-commit run --all-files
+
+format:
+	ruff check .
