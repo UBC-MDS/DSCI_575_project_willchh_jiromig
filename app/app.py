@@ -61,3 +61,29 @@ def display_result(result: dict, idx: int, query: str, mode: str) -> None:
             if st.button("\U0001f44e", key=f"down_{idx}"):
                 save_feedback(query, mode, result.get("parent_asin", ""), "negative")
                 st.toast("Thanks for your feedback!")
+
+def main():
+    st.set_page_config(page_title="Amazon Beauty Search", layout="wide")
+    st.title("Amazon Beauty Product Search")
+
+    retrievers = load_retrievers()
+
+    with st.sidebar:
+        st.header("Search Settings")
+        mode = st.radio("Search Mode", list(retrievers.keys()))
+        top_k = st.slider("Number of results", min_value=1, max_value=10, value=5)
+
+    query = st.text_input(
+        "Enter your search query", placeholder="e.g., best moisturizer for sensitive skin"
+    )
+
+    if query:
+        retriever = retrievers[mode]
+        results = retriever.search(query, top_k=top_k)
+
+        st.subheader(f"Results ({mode})")
+        for idx, result in enumerate(results):
+            display_result(result, idx, query, mode)
+
+if __name__ == "__main__":
+    main()
