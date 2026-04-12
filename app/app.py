@@ -1,6 +1,9 @@
 import csv
+import sys
 from datetime import datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 
@@ -19,6 +22,7 @@ def load_retrievers():
 
     return {"BM25": bm25}
 
+
 def save_feedback(query: str, mode: str, product_asin: str, feedback: str) -> None:
     """Append feedback to CSV file."""
     file_exists = FEEDBACK_PATH.exists()
@@ -27,6 +31,7 @@ def save_feedback(query: str, mode: str, product_asin: str, feedback: str) -> No
         if not file_exists:
             writer.writerow(["timestamp", "query", "mode", "product_asin", "feedback"])
         writer.writerow([datetime.now().isoformat(), query, mode, product_asin, feedback])
+
 
 def display_result(result: dict, idx: int, query: str, mode: str) -> None:
     """Display a single product result as a card."""
@@ -62,6 +67,7 @@ def display_result(result: dict, idx: int, query: str, mode: str) -> None:
                 save_feedback(query, mode, result.get("parent_asin", ""), "negative")
                 st.toast("Thanks for your feedback!")
 
+
 def main():
     st.set_page_config(page_title="Amazon Beauty Search", layout="wide")
     st.title("Amazon Beauty Product Search")
@@ -84,6 +90,7 @@ def main():
         st.subheader(f"Results ({mode})")
         for idx, result in enumerate(results):
             display_result(result, idx, query, mode)
+
 
 if __name__ == "__main__":
     main()
