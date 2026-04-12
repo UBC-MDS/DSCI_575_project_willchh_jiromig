@@ -229,3 +229,4 @@ glossary.md
 *.pkl
 indices/
 local/
+*.parquet
