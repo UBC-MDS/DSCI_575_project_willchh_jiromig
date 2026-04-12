@@ -228,4 +228,5 @@ glossary.md
 *~
 *.json1.gz
 *.zip
+*.pkl
 local/
