@@ -1,9 +1,18 @@
-.PHONY: setup app test lint format
+.PHONY: setup download-data build-corpus build-indices app test lint format
 
-setup:
-# 	python -m venv .venv
-# 	.venv/Scripts/pip install -r requirements.txt
-	@test -f .env || cp .env.example .env
+setup: download-data build-corpus build-indices
+
+download-data:
+	@echo "==> Downloading raw data..."
+	@python -u -c "from src.utils import download_raw_data; download_raw_data('data/raw')"
+
+build-corpus:
+	@echo "==> Building processed corpus..."
+	@python -u -c "from src.utils import build_processed_corpus; build_processed_corpus('data/raw', 'data/processed')"
+
+build-indices:
+	@echo "==> Building search indices..."
+	@python -u -c "from src.utils import build_indices; build_indices('data/processed/product_corpus.parquet', 'indices')"
 
 app:
 	streamlit run app/app.py
