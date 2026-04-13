@@ -1,29 +1,18 @@
 .PHONY: setup download-data build-corpus build-indices app test lint format
 
-REPO := UBC-MDS/DSCI_575_project_willchh_jiromig
-TAG  := v0.1.0
-
-setup: download-data build-corpus
-	@test -f .env || cp .env.example .env
-	@if [ ! -f indices/bm25_index.pkl ]; then \
-		echo "Downloading pre-built indices from GitHub Release $(TAG)..."; \
-		mkdir -p indices/faiss_index; \
-		gh release download $(TAG) --repo $(REPO) --pattern "bm25_index.pkl" --dir indices; \
-		gh release download $(TAG) --repo $(REPO) --pattern "index.faiss" --dir indices/faiss_index; \
-		gh release download $(TAG) --repo $(REPO) --pattern "corpus.pkl" --dir indices/faiss_index; \
-		echo "Indices downloaded successfully."; \
-	else \
-		echo "Indices already exist, skipping download."; \
-	fi
+setup: download-data build-corpus build-indices
 
 download-data:
-	@python -c "from src.utils import download_raw_data; download_raw_data('data/raw')"
+	@echo "==> Downloading raw data..."
+	@python -u -c "from src.utils import download_raw_data; download_raw_data('data/raw')"
 
 build-corpus:
-	@python -c "from src.utils import build_processed_corpus; build_processed_corpus('data/raw', 'data/processed')"
+	@echo "==> Building processed corpus..."
+	@python -u -c "from src.utils import build_processed_corpus; build_processed_corpus('data/raw', 'data/processed')"
 
 build-indices:
-	@python -c "from src.utils import build_indices; build_indices('data/processed/product_corpus.parquet', 'indices')"
+	@echo "==> Building search indices..."
+	@python -u -c "from src.utils import build_indices; build_indices('data/processed/product_corpus.parquet', 'indices')"
 
 app:
 	streamlit run app/app.py
