@@ -47,6 +47,8 @@ A Streamlit web app for interactive querying is implemented with three retrieval
     > [GitHub Release](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases/tag/v0.1.0)
     > instead:
     >
+    > The following commands requires [Github CLI](https://cli.github.com/)
+    >
     > ```bash
     > make download-data build-corpus
     > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
