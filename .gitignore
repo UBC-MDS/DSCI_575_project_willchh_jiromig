@@ -230,3 +230,4 @@ glossary.md
 local/
 *.parquet
 feedback.csv
+index.faiss
