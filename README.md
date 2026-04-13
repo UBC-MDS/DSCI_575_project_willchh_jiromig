@@ -20,13 +20,20 @@ The system follows a three-stage pipeline: **ingest → index → serve**.
 2. **Index Building** — The processed corpus is indexed by two retrieval backends: a BM25 keyword index (pickled) and a FAISS inner-product vector index (binary).
 3. **Serving** — A Streamlit web app loads both indices at startup (cached) and exposes BM25, Semantic, and Hybrid search modes with configurable result count and feedback collection.
 
-```
-McAuley Lab (remote JSONL.gz)
-    → DuckDB → data/raw/*.parquet
-    → Pandas → data/processed/product_corpus.parquet
-    → BM25 index  (indices/bm25_index.pkl)
-    → FAISS index (indices/faiss_index/)
-    → Streamlit app (search + feedback)
+```mermaid
+flowchart TD
+    A["McAuley Lab\n(remote JSONL.gz)"] -->|DuckDB| B["data/raw/*.parquet"]
+    B -->|Pandas| C["data/processed/\nproduct_corpus.parquet"]
+    C --> D["BM25 Index\n(bm25_index.pkl)"]
+    C --> E["FAISS Index\n(index.faiss + corpus.pkl)"]
+    F["User Query"] --> G["Streamlit App"]
+    G -->|keyword| D
+    G -->|embedding| E
+    D --> H["BM25 Results"]
+    E --> I["Semantic Results"]
+    H --> J["Hybrid Retriever\n(weighted combination)"]
+    I --> J
+    J --> K["Ranked Product Cards\n+ Feedback Collection"]
 ```
 
 ### Models
