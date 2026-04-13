@@ -1,7 +1,18 @@
 import gzip
 import json
+from unittest.mock import MagicMock, patch
 
-from src.utils import build_text, load_corpus, load_metadata, save_corpus, tokenize
+import pandas as pd
+
+from src.utils import (
+    build_processed_corpus,
+    build_text,
+    download_raw_data,
+    load_corpus,
+    load_metadata,
+    save_corpus,
+    tokenize,
+)
 
 
 def test_tokenize_basic():
@@ -134,3 +145,91 @@ def test_save_and_load_corpus_parquet(fake_corpus, tmp_path):
     assert loaded[0]["parent_asin"] == "B001"
     assert loaded[0]["title"] == "Vitamin C Serum"
     assert loaded[0]["price"] == 24.99
+
+
+def test_download_raw_data_creates_parquets(tmp_path):
+    """Test that download_raw_data calls DuckDB and creates parquet files."""
+    mock_con = MagicMock()
+    with patch("src.utils.duckdb.connect", return_value=mock_con):
+        download_raw_data(str(tmp_path))
+
+    assert mock_con.execute.call_count == 2
+    calls = [str(c) for c in mock_con.execute.call_args_list]
+    assert any("meta_All_Beauty" in c for c in calls)
+    assert any("reviews_All_Beauty" in c for c in calls)
+    mock_con.close.assert_called_once()
+
+
+def test_download_raw_data_skips_existing(tmp_path):
+    """Test that download_raw_data skips files that already exist."""
+    (tmp_path / "meta_All_Beauty.parquet").touch()
+    (tmp_path / "reviews_All_Beauty.parquet").touch()
+
+    mock_con = MagicMock()
+    with patch("src.utils.duckdb.connect", return_value=mock_con):
+        download_raw_data(str(tmp_path))
+
+    mock_con.execute.assert_not_called()
+
+
+def test_build_processed_corpus(tmp_path):
+    """Test that build_processed_corpus aggregates reviews and saves corpus."""
+    raw_dir = tmp_path / "raw"
+    processed_dir = tmp_path / "processed"
+    raw_dir.mkdir()
+
+    meta_df = pd.DataFrame(
+        [
+            {
+                "parent_asin": "B001",
+                "title": "Vitamin C Serum",
+                "description": "A brightening serum",
+                "features": ["20% vitamin C"],
+                "price": 24.99,
+                "average_rating": 4.5,
+            },
+            {
+                "parent_asin": "B002",
+                "title": "Shampoo",
+                "description": None,
+                "features": [],
+                "price": None,
+                "average_rating": 3.0,
+            },
+        ]
+    )
+    reviews_df = pd.DataFrame(
+        [
+            {
+                "parent_asin": "B001",
+                "text": "Great serum!",
+                "helpful_vote": 10,
+            },
+            {
+                "parent_asin": "B001",
+                "text": "It was okay.",
+                "helpful_vote": 2,
+            },
+            {
+                "parent_asin": "B002",
+                "text": "Nice shampoo",
+                "helpful_vote": 5,
+            },
+        ]
+    )
+    meta_df.to_parquet(raw_dir / "meta_All_Beauty.parquet")
+    reviews_df.to_parquet(raw_dir / "reviews_All_Beauty.parquet")
+
+    build_processed_corpus(str(raw_dir), str(processed_dir))
+
+    corpus_path = processed_dir / "product_corpus.parquet"
+    assert corpus_path.exists()
+
+    corpus_df = pd.read_parquet(corpus_path)
+    assert len(corpus_df) == 2
+    assert corpus_df.iloc[0]["parent_asin"] == "B001"
+    # Should contain the most helpful review (vote=10), not the less helpful one
+    assert "Great serum!" in corpus_df.iloc[0]["text"]
+    assert "It was okay." not in corpus_df.iloc[0]["text"]
+    # Second product should have its review
+    assert "Nice shampoo" in corpus_df.iloc[1]["text"]
