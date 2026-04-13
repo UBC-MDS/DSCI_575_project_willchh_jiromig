@@ -35,11 +35,27 @@ A Streamlit web app for interactive querying is implemented with three retrieval
     conda activate 575-project
     ```
 
-5.  Run to create parquet and download indices:
+5.  Run to download data, build the corpus, and build search indices:
 
     ```bash
     make setup
     ```
+
+    > **Note:** Building the semantic (FAISS) index encodes ~112K products and can take
+    > 3-15 minutes depending on hardware. If you prefer to skip this step, download
+    > the pre-built indices from the
+    > [GitHub Release](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases/tag/v0.1.0)
+    > instead:
+    >
+    > ```bash
+    > make download-data build-corpus
+    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    >     --pattern "bm25_index.pkl" --dir indices
+    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    >     --pattern "index.faiss" --dir indices/faiss_index
+    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    >     --pattern "corpus.pkl" --dir indices/faiss_index
+    > ```
 
 6.  Run to locally deploy streamlit app:
 
