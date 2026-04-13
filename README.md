@@ -10,6 +10,50 @@ Hello Ladies and Gentlemen, Are you ready to bring your skin care to the next le
 We have created a retrieval-based product search system for the Amazon All Beauty dataset.
 A Streamlit web app for interactive querying is implemented with three retrieval methods: BM25, semantic search, and hybrid.
 
+## Project Specs
+
+### Architecture
+
+The system follows a three-stage pipeline: **ingest → index → serve**.
+
+1. **Data Ingestion** — DuckDB reads remote JSONL.gz files from [McAuley Lab](https://amazon-reviews-2023.github.io/) and writes local Parquet files (ZSTD compression). Pandas then builds a unified corpus by concatenating `title`, `description`, `features`, and the most helpful review per product into a single `text` field.
+2. **Index Building** — The processed corpus is indexed by two retrieval backends: a BM25 keyword index (pickled) and a FAISS inner-product vector index (binary).
+3. **Serving** — A Streamlit web app loads both indices at startup (cached) and exposes BM25, Semantic, and Hybrid search modes with configurable result count and feedback collection.
+
+```
+McAuley Lab (remote JSONL.gz)
+    → DuckDB → data/raw/*.parquet
+    → Pandas → data/processed/product_corpus.parquet
+    → BM25 index  (indices/bm25_index.pkl)
+    → FAISS index (indices/faiss_index/)
+    → Streamlit app (search + feedback)
+```
+
+### Models
+
+| Model | Type | Details |
+|-------|------|---------|
+| **all-MiniLM-L6-v2** | Sentence-transformer (HuggingFace) | Encodes text into 384-dim normalized vectors for cosine similarity search via FAISS `IndexFlatIP` |
+| **BM25Okapi** | Statistical (bag-of-words) | Scores documents by term frequency / inverse document frequency; queries are tokenized with NLTK stopword removal and WordNet lemmatization |
+
+### Tech Stack
+
+| Layer | Technology | Version |
+|-------|------------|---------|
+| Language | Python | 3.12 |
+| Environment | Conda | `environment.yml` → `575-project` |
+| Keyword retrieval | rank-bm25 | 0.2.2 |
+| Embeddings | sentence-transformers | 5.4.0 |
+| Vector search | faiss-cpu | 1.13.2 |
+| Text preprocessing | NLTK | 3.9.4 |
+| Data ingestion | DuckDB | 1.5.1 |
+| Data manipulation | Pandas / NumPy | 2.3.3 / 2.4.1 |
+| Web app | Streamlit | 1.56.0 |
+| Testing | pytest (+ cov, xdist, randomly, playwright) | 9.0.2 |
+| Linting & formatting | Ruff, Black, isort, pre-commit | — |
+| CI/CD | GitHub Actions (lint → test → validate-app) | ubuntu-latest |
+| Build automation | GNU Make | — |
+
 ## Developer Setup
 
 ### Dependencies
