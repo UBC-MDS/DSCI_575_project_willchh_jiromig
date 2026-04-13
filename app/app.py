@@ -8,6 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import streamlit as st
 
 from src.bm25 import BM25Retriever
+from src.hybrid import HybridRetriever
+from src.semantic import SemanticRetriever
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 INDICES_DIR = BASE_DIR / "indices"
@@ -20,7 +22,12 @@ def load_retrievers():
     bm25 = BM25Retriever()
     bm25.load(str(INDICES_DIR / "bm25_index.pkl"))
 
-    return {"BM25": bm25}
+    semantic = SemanticRetriever()
+    semantic.load(str(INDICES_DIR / "faiss_index"))
+
+    hybrid = HybridRetriever(bm25, semantic)
+
+    return {"BM25": bm25, "Semantic": semantic, "Hybrid": hybrid}
 
 
 def save_feedback(query: str, mode: str, product_asin: str, feedback: str) -> None:
