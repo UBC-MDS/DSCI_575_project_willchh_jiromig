@@ -2,7 +2,7 @@
 | | |
 | --- | --- |
 | CI/CD | [![CI](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/actions/workflows/ci.yml/badge.svg)](https://github.com/UBC-MDS/DSCI_575_willchh_jiromig/actions/workflows/ci.yml) |
-| Project | [![GitHub Release](https://img.shields.io/github/v/release/UBC-MDS/DSCI_575_project_willchh_jiromig?color=green)](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases) [![Python Version](https://img.shields.io/badge/Python-3.12-green)](https://www.python.org/downloads/release/python-3120/) [![Repo Status](https://img.shields.io/badge/repo%20status-Active-brightgreen)](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig) |
+| Project | [![Python Version](https://img.shields.io/badge/Python-3.12-green)](https://www.python.org/downloads/release/python-3120/) [![Repo Status](https://img.shields.io/badge/repo%20status-Active-brightgreen)](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig) |
 | Meta | [![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) |
 
 Hello Ladies and Gentlemen, Are you ready to bring your skin care to the next level?!?!
@@ -15,6 +15,7 @@ A Streamlit web app for interactive querying is implemented with three retrieval
 ### Dependencies
 
 -   `conda` (version 26.1.0 or higher)
+-   [GNU Make](https://www.gnu.org/software/make/) (pre-installed on macOS/Linux; on Windows install via `choco install make` or `winget install GnuWin32.Make`)
 -   Python and packages listed in [`requirements.txt`](requirements.txt)
 
 1.  Install [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) as a prerequisite.
