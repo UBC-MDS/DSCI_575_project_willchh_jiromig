@@ -1,25 +1,71 @@
-# DSCI 575 — Amazon Beauty Product Search
+# DSCI 575 - Amazon Beauty Product Search
+| | |
+| --- | --- |
+| CI/CD | [![CI](https://github.com/UBC-MDS/DSCI-532_2026_33_fin-health/actions/workflows/ci.yml/badge.svg)](https://github.com/UBC-MDS/DSCI-532_2026_33_fin-health/actions/workflows/ci.yml) |
+| Project | [![GitHub Release](https://img.shields.io/github/v/release/UBC-MDS/DSCI_575_project_willchh_jiromig?color=green)](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases) [![Python Version](https://img.shields.io/badge/Python-3.12-green)](https://www.python.org/downloads/release/python-3120/) [![Repo Status](https://img.shields.io/badge/repo%20status-Active-brightgreen)](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig) |
+| Meta | [![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) |
 
 Hello Ladies and Gentlemen, Are you ready to bring your skin care to the next level ?!?!
 
 We have created a retrieval-based product search system for the Amazon All Beauty dataset.
 A Streamlit web app for interactive querying is implemented with three retrieval methods: BM25, semantic search, and hybrid.
 
-**Team:** Jiro Amato(Big 🐐), William Chong(small 🐐)
+## Developer Setup
 
-## Quick Start
+### Dependencies
 
-HELLO TAs, these condensed steps are just for you. Follow along and you can finish marking in no time. Woohoo!
+-   `conda` (version 26.1.0 or higher)
+-   Python and packages listed in [`requirements.txt`](requirements.txt)
 
-| Step | Command | What it does |
-|------|---------|-------------|
-| STEP 1 | `git clone https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig.git && cd DSCI_575_project_willchh_jiromig` | Clone the repo |
-| STEP 2 | `conda env create -f environment.yml && conda activate 575-project` | Create and activate the conda environment (Python 3.12 + all dependencies) |
-| STEP 3 | `make setup` | Copy `.env.example` to `.env` (no API keys needed for Milestone 1) |
-| STEP 4 | Open and Run `notebooks/milestone1_exploration.ipynb` top to bottom | Download data, build corpus, build BM25 and FAISS indices |
-| STEP 5 | `make app` | Launch the Streamlit app at `http://localhost:8501` |
-| STEP 6 | `make test` | Run the test suite with coverage |
-| STEP 7 | `make lint` | Run pre-commit linting hooks |
+1.  Install [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) as a prerequisite.
+
+2.  Open terminal and run the following commands.
+
+3.  Clone the repository:
+
+    ```bash
+    git clone https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig.git
+    cd DSCI_575_project_willchh_jiromig
+    ```
+
+4.  Create and activate the conda environment:
+
+    ```bash
+    conda env create -f environment.yml
+    conda activate 575-project
+    ```
+
+5.  Run to create parquet and download indices:
+
+    ```bash
+    make setup
+    ```
+
+6.  Run to locally deploy streamlit app:
+
+    ```bash
+    make app
+    ```
+
+7.  If you want to run the test suite:
+
+    ```bash
+    make test
+    ```
+
+8.  For rebuilding the corpus/embeddings:
+
+    ```bash
+    make build-corpus
+    make build-indices
+    ```
+
+9.  For linting and formatting:
+
+    ```bash
+    make lint # linting
+    make format # formatting
+    ```
 
 ## Repository Structure
 
@@ -28,169 +74,62 @@ DSCI_575_project_willchh_jiromig/
 ├── app/
 │   └── app.py                  # Streamlit web app
 ├── data/
-│   ├── raw/                    # Raw dataset files (gitignored)
-│   └── processed/
-│       └── ground_truth.csv    # 21 evaluation queries across 3 difficulty tiers
-├── indices/                    # Persisted search indices (gitignored)
+│   ├── raw/                    # Downloaded parquet files (gitignored)
+│   └── processed/              # Cleaned corpus and ground truth queries
+├── indices/                    # Persisted BM25 and FAISS indices (gitignored)
 ├── notebooks/
-│   ├── milestone1_exploration.ipynb            # EDA, corpus building, index building
-│   └── milestone1_retrieval_evaluations.ipynb  # Retrieval evaluation across all methods
+│   ├── milestone1_exploration.ipynb          # Data download and EDA
+│   └── milestone1_retrieval_evaluations.ipynb # Retrieval testing and evaluation
 ├── results/
 │   └── milestone1_discussion.md  # Qualitative evaluation write-up
 ├── src/
-│   ├── utils.py                # Data loading, text preprocessing, tokenization
-│   ├── bm25.py                 # BM25Retriever class
-│   ├── semantic.py             # SemanticRetriever class (FAISS + sentence-transformers)
-│   └── hybrid.py               # HybridRetriever class (weighted BM25 + semantic)
+│   ├── bm25.py                 # BM25 retriever class
+│   ├── semantic.py             # Semantic (FAISS) retriever class
+│   ├── hybrid.py               # Hybrid retriever combining BM25 and semantic
+│   └── utils.py                # Tokenization, corpus building, data download
 ├── tests/                      # pytest test suite
+├── Makefile                    # Build automation
 ├── environment.yml             # Conda environment specification
-├── requirements.txt            # Python package dependencies
-└── Makefile                    # Common commands (setup, app, test, lint)
+└── requirements.txt            # Pip dependencies
 ```
-
-## Detailed Steps
-
-Below are the steps that anyone can follow to reproduce the full workflow.
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig.git
-cd DSCI_575_project_willchh_jiromig
-```
-
-### 2. Create the conda environment
-
-```bash
-conda env create -f environment.yml
-conda activate 575-project
-```
-
-This installs Python 3.12 and all dependencies listed in `requirements.txt` (including `rank-bm25`, `sentence-transformers`, `faiss-cpu`, `duckdb`, `streamlit`, etc.).
-
-### 3. Run initial setup
-
-```bash
-make setup
-```
-
-This copies `.env.example` to `.env`. No API keys are required for Milestone 1.
-
-### 4. Build the corpus and indices
-
-Run the notebook `notebooks/milestone1_exploration.ipynb` from top to bottom. This will:
-
-1. Download the All Beauty metadata from HuggingFace using DuckDB
-2. Perform EDA on the dataset
-3. Build the product corpus and save it as `data/processed/product_corpus.parquet`
-4. Build and persist the BM25 index (`indices/bm25_index.pkl`) and FAISS index (`indices/faiss_index/`)
-
-This step is required before running the app.
-
-### 5. Run the app
-
-```bash
-make app
-```
-
-Launches the Streamlit app at `http://localhost:8501`. You can search using BM25, Semantic, or Hybrid mode.
-
-### 6. Run tests and linting
-
-```bash
-make test
-make lint
-```
-
-`make test` runs the pytest suite with coverage. `make lint` runs pre-commit formatting hooks.
-
-## Dataset
-
-**Source:** [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/) — "All Beauty" category
-
-**Size:** ~113,000 products
-
-**Fields used for retrieval:**
-
-| Field | Description |
-|-------|-------------|
-| `parent_asin` | Unique product identifier |
-| `title` | Product name |
-| `description` | Product description text |
-| `features` | Bullet-point feature list |
-| `price` | Product price |
-| `average_rating` | Mean user rating (1–5) |
-
-The raw metadata file (`meta_All_Beauty.jsonl.gz`) is downloaded automatically by the notebook via DuckDB from HuggingFace and is not committed to the repository.
 
 ## Data Processing
 
-Each product's text fields are concatenated into a single retrieval document:
+The dataset is sourced from [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/) (McAuley Lab), using the **All Beauty** category (~112K products, ~701K reviews).
 
-```
-text = title + description + features
-```
+**Fields used for retrieval:**
+- `title` — primary product identifier
+- `description` — detailed product information
+- `features` — bullet-point product attributes
+- `reviews_text` — the single most helpful review per product (by `helpful_vote` count)
 
-Products with no text content are excluded. The resulting corpus is saved as a compressed parquet file (`data/processed/product_corpus.parquet`).
+These fields are concatenated into a single `text` field per product. Price, rating, and images are kept as metadata for display but are not included in the search text.
 
-**Tokenization (for BM25):**
-- Lowercase all text
-- Split hyphens and slashes into separate tokens
-- Remove punctuation
-- Remove English stopwords (via NLTK)
-- Lemmatize tokens (via NLTK WordNetLemmatizer)
+**Preprocessing pipeline (BM25):**
+1. Lowercase
+2. Split hyphens and slashes into spaces
+3. Remove punctuation
+4. Remove English stopwords (NLTK)
+5. Lemmatize tokens (NLTK WordNetLemmatizer)
 
-Semantic search uses raw text directly — the sentence-transformer model handles its own tokenization.
+Semantic search uses raw concatenated text (the sentence-transformer model handles its own tokenization).
 
 ## Retrieval Methods
 
-### BM25 (keyword-based)
+**BM25** - Keyword-based retrieval using [rank_bm25](https://github.com/dorianbrown/rank_bm25) (Okapi BM25). Scores documents by term frequency and inverse document frequency. Works best for queries that use exact product vocabulary (e.g., "vitamin C serum", "sunscreen SPF 50").
 
-Uses the [rank-bm25](https://github.com/dorianbrown/rank_bm25) library (`BM25Okapi`). Queries and documents are tokenized with the same preprocessing pipeline (lowercase, stopword removal, lemmatization). Returns results ranked by BM25 score.
+**Semantic Search** - Embedding-based retrieval using [sentence-transformers](https://huggingface.co/sentence-transformers) (`all-MiniLM-L6-v2`) and [FAISS](https://faiss.ai/) inner-product search. Encodes queries and documents into 384-dimensional vectors and ranks by cosine similarity. Works best for intent-based queries where the user paraphrases or describes a need (e.g., "something to protect from sun damage").
 
-**Strengths:** Exact keyword matching, fast, no model required.
+**Hybrid Search** - Combines BM25 and semantic scores via weighted linear combination. Both score sets are min-max normalized to [0, 1], then combined: `score = bm25_weight * bm25_score + (1 - bm25_weight) * semantic_score`. The weight is configurable in the app.
 
-### Semantic Search (embedding-based)
 
-Uses [sentence-transformers](https://huggingface.co/sentence-transformers) (`all-MiniLM-L6-v2`) to encode documents and queries into 384-dimensional vectors. A [FAISS](https://faiss.ai/) inner-product index (`IndexFlatIP`) stores normalized embeddings and retrieves by cosine similarity.
+## Contributors
 
-**Strengths:** Understands meaning and intent beyond exact keywords (e.g., "something to protect from sun damage" retrieves sunscreen products).
+- William Chong
+- Jiro Amato
 
-### Hybrid Search
+## License
 
-Combines BM25 and semantic scores using weighted linear combination:
+- Copyright © 2026 William Chong, Jiro Amato
 
-1. Retrieve `top_k * 3` candidates from each method
-2. Min-max normalize each score set to [0, 1]
-3. Combine: `score = bm25_weight * bm25_score + (1 - bm25_weight) * semantic_score`
-4. Re-rank and return top-k
-
-Default weight is 0.5 (equal contribution).
-
-## Running the App
-
-```bash
-make app
-```
-
-This launches a Streamlit app at `http://localhost:8501` with:
-
-- **Search mode selector:** BM25, Semantic, or Hybrid
-- **Query input:** free-text search box
-- **Results display:** product title, truncated text, price, star rating, and retrieval score
-- **Feedback buttons:** thumbs up/down per result (saved to `data/feedback.csv`)
-
-## Running Tests
-
-```bash
-make test
-```
-
-Runs the pytest suite with coverage reporting. Tests use a small fixture corpus (10 products) defined in `tests/conftest.py` — no real dataset required.
-
-## Qualitative Evaluation
-
-We evaluated 21 queries across three difficulty tiers (easy, medium, hard) against all three retrieval methods. Results and discussion are in:
-
-- `notebooks/milestone1_retrieval_evaluations.ipynb` — full evaluation runs
-- `results/milestone1_discussion.md` — side-by-side comparisons and analysis
+- Free software distributed under the [MIT License](./LICENSE.md).
