@@ -11,7 +11,7 @@ def test_tokenize_basic():
 
 def test_tokenize_punctuation():
     result = tokenize("anti-aging cream, 100% organic!")
-    assert result == ["antiaging", "cream", "100", "organic"]
+    assert result == ["anti", "aging", "cream", "100", "organic"]
 
 
 def test_tokenize_empty_string():
@@ -22,6 +22,32 @@ def test_tokenize_empty_string():
 def test_tokenize_extra_whitespace():
     result = tokenize("  vitamin   C   serum  ")
     assert result == ["vitamin", "c", "serum"]
+
+
+def test_tokenize_removes_stopwords():
+    result = tokenize("this is a great moisturizer for the skin")
+    assert "this" not in result
+    assert "is" not in result
+    assert "a" not in result
+    assert "for" not in result
+    assert "the" not in result
+    assert "great" in result
+    assert "moisturizer" in result
+    assert "skin" in result
+
+
+def test_tokenize_lemmatizes_words():
+    result = tokenize("moisturizing creams and lotions")
+    assert "moisturizing" in result or "moisturize" in result
+    assert "cream" in result  # creams -> cream
+    assert "lotion" in result  # lotions -> lotion
+
+
+def test_tokenize_slash_splitting():
+    result = tokenize("shampoo/conditioner combo")
+    assert "shampoo" in result
+    assert "conditioner" in result
+    assert "combo" in result
 
 
 def test_build_text_all_fields():
