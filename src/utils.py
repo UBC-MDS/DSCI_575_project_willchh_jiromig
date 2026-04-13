@@ -3,14 +3,23 @@ import json
 import re
 from pathlib import Path
 
+import nltk
 import pandas as pd
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+nltk.download("stopwords", quiet=True)
+nltk.download("wordnet", quiet=True)
+STOPWORDS = set(stopwords.words("english"))
+LEMMATIZER = WordNetLemmatizer()
 
 
 def tokenize(text: str) -> list[str]:
-    """Lowercase, remove punctuation, split on whitespace."""
+    """Lowercase, split hyphens, remove punctuation, remove stopwords, lemmatize."""
     text = text.lower()
+    text = re.sub(r"[-/]", " ", text)
     text = re.sub(r"[^\w\s]", "", text)
-    return text.split()
+    return [LEMMATIZER.lemmatize(t) for t in text.split() if t not in STOPWORDS]
 
 
 def _to_str_list(value) -> list[str]:
@@ -25,13 +34,16 @@ def _to_str_list(value) -> list[str]:
 
 
 def build_text(product: dict) -> str:
-    """Concatenate title + description + features into a single text field."""
+    """Concatenate title + description + features + reviews into a single text field."""
     parts = []
     title = product.get("title")
     if isinstance(title, str) and title.strip():
         parts.append(title)
     parts.extend(_to_str_list(product.get("description")))
     parts.extend(_to_str_list(product.get("features")))
+    reviews_text = product.get("reviews_text", "")
+    if isinstance(reviews_text, str) and reviews_text.strip():
+        parts.append(reviews_text)
     return " ".join(parts)
 
 
