@@ -65,10 +65,12 @@ def download_raw_data(data_raw_dir: str) -> None:
     meta_path = data_raw / f"meta_{CATEGORY}.parquet"
     if not meta_path.exists():
         print(f"Downloading metadata to {meta_path}...")
-        con.execute(f"""
+        con.execute(
+            f"""
             COPY (SELECT * FROM read_json_auto('{meta_url}'))
             TO '{meta_path}' (FORMAT PARQUET, COMPRESSION ZSTD)
-        """)
+        """
+        )
         print("Metadata download complete.")
     else:
         print(f"Already exists, skipping: {meta_path}")
@@ -76,10 +78,12 @@ def download_raw_data(data_raw_dir: str) -> None:
     reviews_path = data_raw / f"reviews_{CATEGORY}.parquet"
     if not reviews_path.exists():
         print(f"Downloading reviews to {reviews_path}...")
-        con.execute(f"""
+        con.execute(
+            f"""
             COPY (SELECT * FROM read_json_auto('{reviews_url}'))
             TO '{reviews_path}' (FORMAT PARQUET, COMPRESSION ZSTD)
-        """)
+        """
+        )
         print("Reviews download complete.")
     else:
         print(f"Already exists, skipping: {reviews_path}")
