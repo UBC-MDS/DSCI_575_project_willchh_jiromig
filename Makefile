@@ -1,10 +1,9 @@
 .PHONY: setup app test lint format
 
 setup:
-	python -m venv .venv
-	.venv/Scripts/pip install -r requirements.txt
-	pre-commit install
-	@if not exist .env copy .env.example .env
+# 	python -m venv .venv
+# 	.venv/Scripts/pip install -r requirements.txt
+	@test -f .env || cp .env.example .env
 
 app:
 	streamlit run app/app.py

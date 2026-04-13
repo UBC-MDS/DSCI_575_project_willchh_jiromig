@@ -215,8 +215,6 @@ AGENTS.md
 2026-*-milestone*-design.md
 
 # Misc
-*.env
-.env.*
 .factory/
 *.pyc
 *.pyo
@@ -231,3 +229,4 @@ glossary.md
 *.pkl
 indices/
 local/
+*.parquet
