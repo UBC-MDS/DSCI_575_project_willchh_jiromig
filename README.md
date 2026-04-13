@@ -46,9 +46,9 @@ A Streamlit web app for interactive querying is implemented with three retrieval
     > 3-15 minutes depending on hardware. If you prefer to skip this step, download
     > the pre-built indices from the
     > [GitHub Release](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases/tag/v0.1.0)
-    > instead:
+    > instead but make sure to follow the indices/ structure below under Repository Structure:
     >
-    > The following commands requires [Github CLI](https://cli.github.com/)
+    > The following commands requires [Github CLI](https://cli.github.com/):
     >
     > ```bash
     > make download-data build-corpus
@@ -96,6 +96,10 @@ DSCI_575_project_willchh_jiromig/
 │   ├── raw/                    # Downloaded parquet files (gitignored)
 │   └── processed/              # Cleaned corpus and ground truth queries
 ├── indices/                    # Persisted BM25 and FAISS indices (gitignored)
+│   ├── bm25_index.pkl          # Follow the following structure for indices
+│   └── faiss_index/
+│       ├── corpus.pkl
+│       └── index.faiss
 ├── notebooks/
 │   ├── milestone1_exploration.ipynb          # Data download and EDA
 │   └── milestone1_retrieval_evaluations.ipynb # Retrieval testing and evaluation
