@@ -1,4 +1,4 @@
-.PHONY: setup download-data build-corpus app test lint format
+.PHONY: setup download-data build-corpus build-indices app test lint format
 
 REPO := UBC-MDS/DSCI_575_project_willchh_jiromig
 TAG  := v0.1.0
@@ -21,6 +21,9 @@ download-data:
 
 build-corpus:
 	@python -c "from src.utils import build_processed_corpus; build_processed_corpus('data/raw', 'data/processed')"
+
+build-indices:
+	@python -c "from src.utils import build_indices; build_indices('data/processed/product_corpus.parquet', 'indices')"
 
 app:
 	streamlit run app/app.py

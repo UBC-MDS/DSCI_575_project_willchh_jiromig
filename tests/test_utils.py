@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 
 from src.utils import (
+    build_indices,
     build_processed_corpus,
     build_text,
     download_raw_data,
@@ -233,3 +234,32 @@ def test_build_processed_corpus(tmp_path):
     assert "It was okay." not in corpus_df.iloc[0]["text"]
     # Second product should have its review
     assert "Nice shampoo" in corpus_df.iloc[1]["text"]
+
+
+def test_build_indices(fake_corpus, tmp_path):
+    """Test that build_indices builds and saves BM25 and FAISS indices."""
+    corpus_path = tmp_path / "corpus.parquet"
+    indices_dir = tmp_path / "indices"
+    save_corpus(fake_corpus, str(corpus_path))
+
+    build_indices(str(corpus_path), str(indices_dir))
+
+    assert (indices_dir / "bm25_index.pkl").exists()
+    assert (indices_dir / "faiss_index" / "index.faiss").exists()
+    assert (indices_dir / "faiss_index" / "corpus.pkl").exists()
+
+
+def test_build_indices_skips_existing(fake_corpus, tmp_path):
+    """Test that build_indices skips indices that already exist."""
+    corpus_path = tmp_path / "corpus.parquet"
+    indices_dir = tmp_path / "indices"
+    save_corpus(fake_corpus, str(corpus_path))
+
+    # Create sentinel files so build_indices thinks they already exist
+    (indices_dir / "faiss_index").mkdir(parents=True)
+    (indices_dir / "bm25_index.pkl").write_bytes(b"fake")
+
+    build_indices(str(corpus_path), str(indices_dir))
+
+    # Files should remain unchanged (not overwritten)
+    assert (indices_dir / "bm25_index.pkl").read_bytes() == b"fake"

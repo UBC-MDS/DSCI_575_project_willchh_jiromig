@@ -129,6 +129,38 @@ def build_processed_corpus(data_raw_dir: str, data_processed_dir: str) -> None:
     print(f"Corpus saved: {len(records):,} products to {corpus_path}")
 
 
+def build_indices(corpus_path: str, indices_dir: str) -> None:
+    """Build BM25 and FAISS indices from a processed corpus and save to disk."""
+    from src.bm25 import BM25Retriever
+    from src.semantic import SemanticRetriever
+
+    indices = Path(indices_dir)
+    indices.mkdir(parents=True, exist_ok=True)
+
+    corpus = load_corpus(corpus_path)
+    print(f"Loaded corpus: {len(corpus):,} products")
+
+    bm25_path = indices / "bm25_index.pkl"
+    if not bm25_path.exists():
+        print("Building BM25 index...")
+        bm25 = BM25Retriever()
+        bm25.build_index(corpus)
+        bm25.save(str(bm25_path))
+        print(f"BM25 index saved to {bm25_path}")
+    else:
+        print(f"Already exists, skipping: {bm25_path}")
+
+    faiss_path = indices / "faiss_index"
+    if not faiss_path.exists():
+        print("Building semantic (FAISS) index...")
+        semantic = SemanticRetriever()
+        semantic.build_index(corpus)
+        semantic.save(str(faiss_path))
+        print(f"Semantic index saved to {faiss_path}")
+    else:
+        print(f"Already exists, skipping: {faiss_path}")
+
+
 def load_metadata(filepath: str) -> list[dict]:
     """Load product metadata from a gzipped JSONL file and build corpus."""
     corpus = []
