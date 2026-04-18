@@ -14,11 +14,12 @@ A Streamlit web app for interactive querying is implemented with three retrieval
 
 ### Architecture
 
-The system follows a three-stage pipeline: **ingest → index → serve**.
+The system follows a four-stage pipeline: **ingest → index → retrieve → generate**.
 
 1. **Data Ingestion** — DuckDB reads remote JSONL.gz files from [McAuley Lab](https://amazon-reviews-2023.github.io/) and writes local Parquet files (ZSTD compression). Pandas then builds a unified corpus by concatenating `title`, `description`, `features`, and the most helpful review per product into a single `text` field.
 2. **Index Building** — The processed corpus is indexed by two retrieval backends: a BM25 keyword index (pickled) and a FAISS inner-product vector index (binary).
-3. **Serving** — A Streamlit web app loads both indices at startup (cached) and exposes BM25, Semantic, and Hybrid search modes with configurable result count and feedback collection.
+3. **Retrieval** — The Streamlit app exposes two modes: a **Search tab** (Milestone 1) with BM25, Semantic, and Hybrid search, and a **RAG tab** (Milestone 2) that retrieves documents and feeds them to an LLM.
+4. **Generation** — The RAG pipeline composes a LangChain retriever, context builder, prompt template, and hosted LLM (`Meta-Llama-3-8B-Instruct` via HuggingFace Inference API) to generate grounded answers.
 
 ```mermaid
 flowchart TD
@@ -27,13 +28,18 @@ flowchart TD
     C --> D["BM25 Index\n(bm25_index.pkl)"]
     C --> E["FAISS Index\n(index.faiss + corpus.pkl)"]
     F["User Query"] --> G["Streamlit App"]
-    G -->|keyword| D
-    G -->|embedding| E
-    D --> H["BM25 Results"]
-    E --> I["Semantic Results"]
-    H --> J["Hybrid Retriever\n(weighted combination)"]
-    I --> J
-    J --> K["Ranked Product Cards\n+ Feedback Collection"]
+    G -->|Search tab| Hybrid["Search Hybrid\n(min-max)"]
+    G -->|RAG tab| RP["RAGPipeline (LCEL)"]
+    D --> RP
+    E --> RP
+    D --> Hybrid
+    E --> Hybrid
+    RP --> Ens["EnsembleRetriever (RRF)"]
+    Ens --> Ctx["build_context"]
+    Ctx --> Tmpl["ChatPromptTemplate\n(strict / shopper / json)"]
+    Tmpl --> LLM["ChatHuggingFace\nMeta-Llama-3-8B-Instruct"]
+    LLM --> Ans["Answer + sources"]
+    Ans --> G
 ```
 
 ### Models
@@ -57,6 +63,10 @@ flowchart TD
 | Data manipulation | Pandas / NumPy | 2.3.3 / 2.4.1 |
 | Web app | Streamlit | 1.56.0 |
 | Testing | pytest (+ cov, xdist, randomly, playwright) | 9.0.2 |
+| LLM framework | LangChain (LCEL) | 1.2.15 |
+| LLM provider | HuggingFace Inference API | — |
+| LLM model | Meta-Llama-3-8B-Instruct | 8B params |
+| Web search (optional) | Tavily | 0.7.23 |
 | Linting & formatting | Ruff, Black, isort, pre-commit | — |
 | CI/CD | GitHub Actions (lint → test → validate-app) | ubuntu-latest |
 | Build automation | GNU Make | — |
@@ -153,14 +163,20 @@ DSCI_575_project_willchh_jiromig/
 │       └── index.faiss
 ├── notebooks/
 │   ├── milestone1_exploration.ipynb          # Data download and EDA
-│   └── milestone1_retrieval_evaluations.ipynb # Retrieval testing and evaluation
+│   ├── milestone1_retrieval_evaluations.ipynb # Retrieval testing and evaluation
+│   └── milestone2_rag.ipynb                 # RAG pipeline exploration and evaluation
 ├── results/
-│   └── milestone1_discussion.md  # Qualitative evaluation write-up
+│   ├── milestone1_discussion.md  # Qualitative evaluation write-up
+│   └── milestone2_discussion.md  # RAG evaluation, model choice, limitations
 ├── src/
 │   ├── bm25.py                 # BM25 retriever class
 │   ├── semantic.py             # Semantic (FAISS) retriever class
 │   ├── hybrid.py               # Hybrid retriever combining BM25 and semantic
-│   └── utils.py                # Tokenization, corpus building, data download
+│   ├── utils.py                # Tokenization, corpus building, data download
+│   ├── rag_pipeline.py         # RAG pipeline class (LCEL chain)
+│   ├── retrievers_lc.py        # LangChain BaseRetriever wrappers
+│   ├── prompts.py              # Context builder and prompt templates
+│   └── tools.py                # Tavily web search tool
 ├── tests/                      # pytest test suite
 ├── Makefile                    # Build automation
 ├── environment.yml             # Conda environment specification
@@ -196,6 +212,34 @@ Semantic search uses raw concatenated text (the sentence-transformer model handl
 
 **Hybrid Search** - Combines BM25 and semantic scores via weighted linear combination. Both score sets are min-max normalized to [0, 1], then combined: `score = bm25_weight * bm25_score + (1 - bm25_weight) * semantic_score`. The weight is configurable in the app.
 
+## RAG Pipeline (Milestone 2)
+
+The RAG tab in the Streamlit app composes four components into a Retrieval-Augmented Generation pipeline:
+
+1. **Retriever** — BM25, Semantic, or Hybrid (LangChain `EnsembleRetriever` with Reciprocal Rank Fusion). Thin `BaseRetriever` wrappers delegate to the existing Milestone 1 retriever classes, preserving the original tokenization and indices.
+2. **Context builder** — `src/prompts.py::build_context` formats the top-k retrieved documents into a numbered block with ASIN, title, rating, price, and a truncated review.
+3. **Prompt template** — One of three `ChatPromptTemplate` variants:
+   - `strict_citation` — answers only from context, cites ASINs for every claim
+   - `helpful_shopper` — friendly recommendation style, mentions price and rating
+   - `structured_json` — returns a JSON object with `recommendation`, `reasoning`, `asins`
+4. **LLM** — `ChatHuggingFace(HuggingFaceEndpoint(repo_id="meta-llama/Meta-Llama-3-8B-Instruct"))` via the HuggingFace Inference API. No local GPU required.
+
+### Required environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `HF_TOKEN` | Yes (for RAG tab) | HuggingFace token with read access. Must have [accepted the Meta Llama 3 license](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct). |
+| `TAVILY_API_KEY` | No | Enables the optional web-search tool toggle in the RAG tab. Without it the toggle is disabled. |
+
+Add these to your `.env` file (see `.env.example`).
+
+### RAG usage
+
+```bash
+make setup                        # one-time data + index build
+echo "HF_TOKEN=hf_xxx" >> .env    # add your HuggingFace token
+make app                          # opens the Streamlit app; click the "RAG" tab
+```
 
 ## Contributors
 
