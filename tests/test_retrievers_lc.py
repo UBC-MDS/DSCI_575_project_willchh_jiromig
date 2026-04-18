@@ -51,6 +51,13 @@ def test_semantic_lc_returns_documents_with_m1_metadata():
     docs = retriever.invoke("sunscreen")
 
     assert len(docs) == 1
-    assert docs[0].metadata["parent_asin"] == "B003"
-    assert docs[0].metadata["score"] == 0.87
+    assert isinstance(docs[0], Document)
+    assert docs[0].page_content == "broad spectrum sunscreen..."
+    assert docs[0].metadata == {
+        "parent_asin": "B003",
+        "title": "SPF 50 Sunscreen",
+        "price": 15.99,
+        "average_rating": 4.8,
+        "score": 0.87,
+    }
     underlying.search.assert_called_once_with("sunscreen", top_k=3)
