@@ -1,0 +1,11 @@
+query_id,query,category
+1,vitamin C serum for brightening,easy_factual
+2,sunscreen with SPF 50,easy_factual
+3,coconut oil shampoo for dry hair,easy_factual
+4,what helps with mild acne and post-acne marks?,paraphrased_intent
+5,gentle face wash that won't irritate sensitive skin,paraphrased_intent
+6,something to make my hair look less frizzy in humidity,paraphrased_intent
+7,affordable retinol treatment for fine lines,paraphrased_intent
+8,best skincare routine for oily acne-prone teenage skin under $30,multi_concept
+9,cruelty-free moisturizer good for winter on sensitive skin,multi_concept
+10,what helps with sun damage on fair skin around the eyes,multi_concept
