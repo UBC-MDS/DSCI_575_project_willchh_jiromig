@@ -56,3 +56,70 @@ def test_rag_pipeline_answer_returns_text_and_sources():
     assert src["parent_asin"] == "B001"
     assert src["title"] == "Vitamin C Serum"
     assert src["page_content"] == "brightening serum with vitamin C"
+
+
+def test_rag_pipeline_uses_selected_prompt_variant():
+    bm25, semantic = _stub_retrievers()
+    fake_llm = FakeListChatModel(responses=["x"])
+
+    from src.rag_pipeline import RAGPipeline
+
+    strict = RAGPipeline(
+        bm25=bm25,
+        semantic=semantic,
+        retriever_name="BM25",
+        prompt_name="strict_citation",
+        llm=fake_llm,
+    )
+    json_pipe = RAGPipeline(
+        bm25=bm25,
+        semantic=semantic,
+        retriever_name="BM25",
+        prompt_name="structured_json",
+        llm=fake_llm,
+    )
+
+    assert strict.prompt is not json_pipe.prompt
+    s_sys = strict.prompt.format_messages(context="x", question="y")[0].content
+    j_sys = json_pipe.prompt.format_messages(context="x", question="y")[0].content
+    assert "ASIN" in s_sys
+    assert "JSON" in j_sys.upper()
+
+
+def test_rag_pipeline_rejects_unknown_prompt_name():
+    bm25, semantic = _stub_retrievers()
+    fake_llm = FakeListChatModel(responses=["x"])
+
+    from src.rag_pipeline import RAGPipeline
+
+    with pytest.raises(KeyError):
+        RAGPipeline(
+            bm25=bm25,
+            semantic=semantic,
+            retriever_name="BM25",
+            prompt_name="bogus",
+            llm=fake_llm,
+        )
+
+
+def test_load_llm_uses_token_from_env(monkeypatch):
+    monkeypatch.setenv("HF_TOKEN", "fake-token")
+    from unittest.mock import patch
+
+    from src.rag_pipeline import load_llm
+
+    with (
+        patch("src.rag_pipeline.HuggingFaceEndpoint") as endpoint_cls,
+        patch("src.rag_pipeline.ChatHuggingFace") as chat_cls,
+    ):
+        endpoint_cls.return_value = MagicMock()
+        chat_cls.return_value = MagicMock()
+
+        load_llm(model_id="some/model", max_new_tokens=100, provider="auto")
+
+    endpoint_cls.assert_called_once()
+    kwargs = endpoint_cls.call_args.kwargs
+    assert kwargs["repo_id"] == "some/model"
+    assert kwargs["huggingfacehub_api_token"] == "fake-token"
+    assert kwargs["max_new_tokens"] == 100
+    chat_cls.assert_called_once()
