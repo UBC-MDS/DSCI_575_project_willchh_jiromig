@@ -23,22 +23,41 @@ The system follows a four-stage pipeline: **ingest → index → retrieve → ge
 
 ```mermaid
 flowchart TD
-    A["McAuley Lab\n(remote JSONL.gz)"] -->|DuckDB| B["data/raw/*.parquet"]
-    B -->|Pandas| C["data/processed/\nproduct_corpus.parquet"]
-    C --> D["BM25 Index\n(bm25_index.pkl)"]
-    C --> E["FAISS Index\n(index.faiss + corpus.pkl)"]
     F["User Query"] --> G["Streamlit App"]
-    G -->|Search tab| Hybrid["Search Hybrid\n(min-max)"]
-    G -->|RAG tab| RP["RAGPipeline (LCEL)"]
-    D --> RP
-    E --> RP
+
+    subgraph Ingest
+        A["McAuley Lab<br/>(remote JSONL.gz)"] -->|DuckDB| B["data/raw/*.parquet"]
+        B -->|Pandas| C["data/processed/<br/>product_corpus.parquet"]
+    end
+
+    subgraph Index
+        D["BM25 Index"]
+        E["FAISS Index"]
+    end
+
+    subgraph Retrieve
+        Hybrid["Search Hybrid<br/>(min-max)"]
+        Ens["EnsembleRetriever<br/>(RRF)"]
+    end
+
+    subgraph Generate
+        Ctx["build_context"] --> Tmpl["ChatPromptTemplate<br/>(strict / shopper / json)"]
+        Tmpl --> LLM["ChatHuggingFace<br/>Meta-Llama-3-8B-Instruct"]
+    end
+
+    C --> D
+    C --> E
     D --> Hybrid
     E --> Hybrid
-    RP --> Ens["EnsembleRetriever (RRF)"]
-    Ens --> Ctx["build_context"]
-    Ctx --> Tmpl["ChatPromptTemplate\n(strict / shopper / json)"]
-    Tmpl --> LLM["ChatHuggingFace\nMeta-Llama-3-8B-Instruct"]
+    D --> Ens
+    E --> Ens
+
+    G -->|Search tab| Hybrid
+    G -->|RAG tab| Ens
+    Ens --> Ctx
     LLM --> Ans["Answer + sources"]
+
+    Hybrid -->|ranked products| G
     Ans --> G
 ```
 
