@@ -8,17 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.2.0] - (2026-04-18)
 
 ### Added
+- `RAGPipeline` class composing retriever + context + prompt + LLM via LCEL pipes (`src/rag_pipeline.py`) ([#36](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/36))
+- `load_llm` helper for HuggingFace Inference API with `HF_TOKEN` guard (`src/rag_pipeline.py`) ([#36](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/36))
 - LangChain retriever wrappers: `BM25LCRetriever` and `SemanticLCRetriever` around the Milestone 1 retrievers (`src/retrievers_lc.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
-- `EnsembleRetriever` factory combining BM25 + semantic, with a `wrap_retriever` dispatch helper (`src/retrievers_lc.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
+- `EnsembleRetriever` factory combining BM25 + semantic via RRF, with a `wrap_retriever` dispatch helper (`src/retrievers_lc.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
 - `build_context` helper for RAG prompt assembly from retrieved product docs (`src/prompts.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
-- Three RAG prompt variants — `strict_citation`, `helpful_shopper`, and `json_output` — exposed via `PROMPT_VARIANTS` (`src/prompts.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
+- Three RAG prompt variants — `strict_citation`, `helpful_shopper`, and `structured_json` — exposed via `PROMPT_VARIANTS` (`src/prompts.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
 - Tavily `web_search` tool stub for augmenting RAG with web results (`src/tools.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
+- Streamlit RAG tab with retriever selector, prompt-variant radio, and answer/sources panel ([#39](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/39))
+- Exploration notebook with component demos, prompt comparison, and 10-query eval run (`notebooks/milestone2_rag.ipynb`) ([#40](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/40))
+- 10-query RAG evaluation set (`data/processed/rag_queries.csv`) ([#40](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/40))
+- Qualitative evaluation discussion with model choice, limitations, and improvements (`results/milestone2_discussion.md`) ([#41](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/41))
+- `langchain`, `langchain-huggingface`, and `tavily-python` dependencies (`requirements.txt`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
 - `TAVILY_API_KEY` placeholder in `.env.example` ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
-- `langchain` and `tavily-python` dependencies (`requirements.txt`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
-- Test suites for the new LangChain retrievers, prompt builders/variants, and web search tool (`tests/test_retrievers_lc.py`, `tests/test_prompts.py`, `tests/test_tools.py`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
+- Test suites for RAG pipeline, LangChain retrievers, prompts, and tools (`tests/`) ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35), [#37](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/37), [#38](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/38))
+- New env vars: `HF_TOKEN` (required for RAG), `TAVILY_API_KEY` (optional for web search)
 
 ### Changed
 - `make test` now enforces a 90% line-coverage gate via `--cov-fail-under=90` ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
+- App split into Search (Milestone 1) and RAG (Milestone 2) tabs ([#39](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/39))
 
 ### Fixed
 - `build_context` coerces string-typed `price` and `rating` fields so real Amazon metadata renders correctly ([#35](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/35))
