@@ -49,3 +49,20 @@ def test_build_context_truncates_long_review_text():
     out = build_context(docs, max_chars=50)
     assert "x" * 50 in out
     assert "x" * 51 not in out
+
+
+def test_build_context_coerces_string_price_and_rating():
+    docs = [
+        Document(
+            page_content="classic oil",
+            metadata={
+                "parent_asin": "B011",
+                "title": "Coconut Oil",
+                "price": "14.50",
+                "average_rating": "4.2",
+            },
+        ),
+    ]
+    out = build_context(docs)
+    assert "Price: $14.50" in out
+    assert "Rating: 4.2/5" in out

@@ -12,8 +12,14 @@ def build_context(docs: Iterable[Document], max_chars: int = MAX_REVIEW_CHARS) -
         text = (doc.page_content or "")[:max_chars]
         rating = meta.get("average_rating")
         price = meta.get("price")
-        rating_str = f"{rating}/5" if rating is not None else "N/A"
-        price_str = f"${price:.2f}" if isinstance(price, (int, float)) else "N/A"
+        try:
+            rating_str = f"{float(rating):.1f}/5"
+        except (TypeError, ValueError):
+            rating_str = "N/A"
+        try:
+            price_str = f"${float(price):.2f}"
+        except (TypeError, ValueError):
+            price_str = "N/A"
         blocks.append(
             f"[{i}] ASIN: {meta.get('parent_asin', 'N/A')} | "
             f"Title: {meta.get('title', 'N/A')} | "
