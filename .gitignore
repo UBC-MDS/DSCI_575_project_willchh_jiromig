@@ -232,3 +232,4 @@ local/
 *.parquet
 feedback.csv
 index.faiss
+rag_eval.json
