@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - (2026-04-18)
+
+### Added
+- LangChain retriever wrappers: `BM25LCRetriever` and `SemanticLCRetriever` around the Milestone 1 retrievers (`src/retrievers_lc.py`)
+- `EnsembleRetriever` factory combining BM25 + semantic, with a `wrap_retriever` dispatch helper (`src/retrievers_lc.py`)
+- `build_context` helper for RAG prompt assembly from retrieved product docs (`src/prompts.py`)
+- Three RAG prompt variants — `strict_citation`, `helpful_shopper`, and `json_output` — exposed via `PROMPT_VARIANTS` (`src/prompts.py`)
+- Tavily `web_search` tool stub for augmenting RAG with web results (`src/tools.py`)
+- `TAVILY_API_KEY` placeholder in `.env.example`
+- `langchain` and `tavily-python` dependencies (`requirements.txt`)
+- Test suites for the new LangChain retrievers, prompt builders/variants, and web search tool (`tests/test_retrievers_lc.py`, `tests/test_prompts.py`, `tests/test_tools.py`)
+
+### Changed
+- `make test` now enforces a 90% line-coverage gate via `--cov-fail-under=90`
+
+### Fixed
+- `build_context` coerces string-typed `price` and `rating` fields so real Amazon metadata renders correctly
+
+
 ## [v0.1.0] - (2026-04-12)
 
 ### Added
