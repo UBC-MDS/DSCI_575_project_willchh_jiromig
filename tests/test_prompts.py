@@ -89,9 +89,7 @@ def test_each_prompt_variant_renders_context_and_question():
 
 
 def test_strict_citation_system_message_demands_asin_citations():
-    rendered = PROMPT_VARIANTS["strict_citation"].format_messages(
-        context="x", question="y"
-    )
+    rendered = PROMPT_VARIANTS["strict_citation"].format_messages(context="x", question="y")
     sys_text = rendered[0].content
     assert "ASIN" in sys_text
     assert "ONLY" in sys_text or "only" in sys_text
@@ -99,18 +97,14 @@ def test_strict_citation_system_message_demands_asin_citations():
 
 
 def test_structured_json_system_message_demands_json_keys():
-    rendered = PROMPT_VARIANTS["structured_json"].format_messages(
-        context="x", question="y"
-    )
+    rendered = PROMPT_VARIANTS["structured_json"].format_messages(context="x", question="y")
     sys_text = rendered[0].content
     for key in ("recommendation", "reasoning", "asins"):
         assert key in sys_text
 
 
 def test_helpful_shopper_system_message_mentions_recommendation():
-    rendered = PROMPT_VARIANTS["helpful_shopper"].format_messages(
-        context="x", question="y"
-    )
+    rendered = PROMPT_VARIANTS["helpful_shopper"].format_messages(context="x", question="y")
     sys_text = rendered[0].content
     assert "recommend" in sys_text.lower()
     assert "price" in sys_text.lower() or "rating" in sys_text.lower()
