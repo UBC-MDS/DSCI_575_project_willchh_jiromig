@@ -1,4 +1,6 @@
 import csv
+import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -9,6 +11,7 @@ import streamlit as st
 
 from src.bm25 import BM25Retriever
 from src.hybrid import HybridRetriever
+from src.prompts import PROMPT_VARIANTS
 from src.semantic import SemanticRetriever
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +31,21 @@ def load_retrievers():
     hybrid = HybridRetriever(bm25, semantic)
 
     return {"BM25": bm25, "Semantic": semantic, "Hybrid": hybrid}
+
+
+@st.cache_resource
+def get_rag_pipeline(retriever_name: str, prompt_name: str, top_k: int):
+    """Build the RAG pipeline lazily so HF_TOKEN is only required on query submit."""
+    from src.rag_pipeline import RAGPipeline
+
+    retrievers = load_retrievers()
+    return RAGPipeline(
+        bm25=retrievers["BM25"],
+        semantic=retrievers["Semantic"],
+        retriever_name=retriever_name,
+        prompt_name=prompt_name,
+        top_k=top_k,
+    )
 
 
 def save_feedback(query: str, mode: str, product_asin: str, feedback: str) -> None:
@@ -66,13 +84,96 @@ def display_result(result: dict, idx: int, query: str, mode: str) -> None:
 
         col_up, col_down, _ = st.columns([1, 1, 8])
         with col_up:
-            if st.button("\U0001f44d", key=f"up_{idx}"):
+            if st.button("\U0001f44d", key=f"up_{mode}_{idx}"):
                 save_feedback(query, mode, result.get("parent_asin", ""), "positive")
                 st.toast("Thanks for your feedback!")
         with col_down:
-            if st.button("\U0001f44e", key=f"down_{idx}"):
+            if st.button("\U0001f44e", key=f"down_{mode}_{idx}"):
                 save_feedback(query, mode, result.get("parent_asin", ""), "negative")
                 st.toast("Thanks for your feedback!")
+
+
+def _render_search_tab(retrievers: dict) -> None:
+    with st.sidebar:
+        st.header("Search Settings")
+        mode = st.radio("Search Mode", list(retrievers.keys()), key="search_mode")
+        top_k = st.slider(
+            "Number of results", min_value=1, max_value=10, value=5, key="search_topk"
+        )
+
+    query = st.text_input(
+        "Enter your search query",
+        placeholder="e.g., best moisturizer for sensitive skin",
+        key="search_query",
+    )
+
+    if query:
+        retriever = retrievers[mode]
+        results = retriever.search(query, top_k=top_k)
+        st.subheader(f"Results ({mode})")
+        for idx, result in enumerate(results):
+            display_result(result, idx, query, mode)
+
+
+def _render_rag_tab(retrievers: dict) -> None:
+    has_tavily = bool(os.environ.get("TAVILY_API_KEY"))
+
+    with st.sidebar:
+        st.header("RAG Settings")
+        retriever_name = st.radio(
+            "Retriever", ["BM25", "Semantic", "Hybrid"], index=2, key="rag_retriever"
+        )
+        prompt_name = st.radio("Prompt variant", list(PROMPT_VARIANTS.keys()), key="rag_prompt")
+        top_k = st.slider("Number of sources", min_value=1, max_value=10, value=5, key="rag_topk")
+        st.checkbox(
+            "Enable web search (Tavily)",
+            value=False,
+            disabled=not has_tavily,
+            help="Set TAVILY_API_KEY in .env to enable.",
+            key="rag_tools",
+        )
+
+    query = st.text_input(
+        "Ask a question about Amazon Beauty products",
+        placeholder="e.g., what's a good vitamin C serum under $25?",
+        key="rag_query",
+    )
+
+    if not query:
+        return
+
+    pipeline = get_rag_pipeline(retriever_name, prompt_name, top_k)
+    with st.spinner("Generating answer..."):
+        try:
+            result = pipeline.answer(query)
+        except RuntimeError as exc:
+            st.error(str(exc))
+            return
+        except Exception as exc:  # noqa: BLE001
+            st.error(f"LLM call failed: {exc}")
+            return
+
+    st.subheader("Answer")
+    if prompt_name == "structured_json":
+        try:
+            parsed = json.loads(result["answer"])
+            st.json(parsed)
+        except json.JSONDecodeError:
+            st.code(result["answer"], language="json")
+    else:
+        st.info(result["answer"])
+
+    st.subheader("Sources")
+    for idx, src in enumerate(result["sources"], start=1):
+        result_dict = {
+            "parent_asin": src.get("parent_asin"),
+            "title": src.get("title"),
+            "text": src.get("page_content", ""),
+            "price": src.get("price"),
+            "average_rating": src.get("average_rating"),
+            "score": src.get("score"),
+        }
+        display_result(result_dict, idx, query, mode=f"rag:{retriever_name}:{prompt_name}")
 
 
 def main():
@@ -81,22 +182,13 @@ def main():
 
     retrievers = load_retrievers()
 
-    with st.sidebar:
-        st.header("Search Settings")
-        mode = st.radio("Search Mode", list(retrievers.keys()))
-        top_k = st.slider("Number of results", min_value=1, max_value=10, value=5)
+    search_tab, rag_tab = st.tabs(["Search", "RAG"])
 
-    query = st.text_input(
-        "Enter your search query", placeholder="e.g., best moisturizer for sensitive skin"
-    )
+    with search_tab:
+        _render_search_tab(retrievers)
 
-    if query:
-        retriever = retrievers[mode]
-        results = retriever.search(query, top_k=top_k)
-
-        st.subheader(f"Results ({mode})")
-        for idx, result in enumerate(results):
-            display_result(result, idx, query, mode)
+    with rag_tab:
+        _render_rag_tab(retrievers)
 
 
 if __name__ == "__main__":
