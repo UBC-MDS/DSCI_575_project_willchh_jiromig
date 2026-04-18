@@ -1,0 +1,34 @@
+from unittest.mock import MagicMock
+
+from langchain_core.documents import Document
+
+from src.retrievers_lc import BM25LCRetriever
+
+
+def test_bm25_lc_returns_documents_with_m1_metadata():
+    underlying = MagicMock()
+    underlying.search.return_value = [
+        {
+            "parent_asin": "B001",
+            "title": "Vitamin C Serum",
+            "text": "brightening serum...",
+            "price": 24.99,
+            "average_rating": 4.5,
+            "score": 12.34,
+        },
+    ]
+    retriever = BM25LCRetriever(underlying=underlying, top_k=5)
+
+    docs = retriever.invoke("vitamin c")
+
+    assert len(docs) == 1
+    assert isinstance(docs[0], Document)
+    assert docs[0].page_content == "brightening serum..."
+    assert docs[0].metadata == {
+        "parent_asin": "B001",
+        "title": "Vitamin C Serum",
+        "price": 24.99,
+        "average_rating": 4.5,
+        "score": 12.34,
+    }
+    underlying.search.assert_called_once_with("vitamin c", top_k=5)
