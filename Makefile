@@ -18,7 +18,7 @@ app:
 	streamlit run app/app.py
 
 test:
-	pytest tests/ --cov=src -v
+	pytest tests/ --cov=src --cov-fail-under=90 --cov-report=term-missing -v
 
 lint:
 	pre-commit run --all-files
