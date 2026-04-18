@@ -85,6 +85,8 @@ def test_build_ensemble_returns_ensemble_with_two_retrievers_and_weights():
     docs = ensemble.invoke("test")
     asins = {d.metadata["parent_asin"] for d in docs}
     assert asins == {"B001", "B002"}
+    bm25.search.assert_called_once_with("test", top_k=2)
+    semantic.search.assert_called_once_with("test", top_k=2)
 
 
 def test_wrap_retriever_dispatches_by_name():
