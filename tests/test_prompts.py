@@ -1,6 +1,6 @@
 from langchain_core.documents import Document
 
-from src.prompts import build_context
+from src.prompts import DEFAULT_PROMPT_NAME, PROMPT_VARIANTS, build_context
 
 
 def _doc(asin, title, text, price=None, rating=None):
@@ -66,3 +66,41 @@ def test_build_context_coerces_string_price_and_rating():
     out = build_context(docs)
     assert "Price: $14.50" in out
     assert "Rating: 4.2/5" in out
+
+
+def test_prompt_variants_has_three_named_templates():
+    assert set(PROMPT_VARIANTS) == {"strict_citation", "helpful_shopper", "structured_json"}
+
+
+def test_default_prompt_name_is_strict_citation():
+    assert DEFAULT_PROMPT_NAME == "strict_citation"
+    assert DEFAULT_PROMPT_NAME in PROMPT_VARIANTS
+
+
+def test_each_prompt_variant_renders_context_and_question():
+    inputs = {"context": "[1] ASIN: B001 ...", "question": "best vitamin C serum?"}
+    for name, template in PROMPT_VARIANTS.items():
+        rendered = template.format_messages(**inputs)
+        # System message + user message
+        assert len(rendered) == 2
+        user_text = rendered[1].content
+        assert "[1] ASIN: B001" in user_text
+        assert "best vitamin C serum?" in user_text
+
+
+def test_strict_citation_system_message_demands_asin_citations():
+    rendered = PROMPT_VARIANTS["strict_citation"].format_messages(
+        context="x", question="y"
+    )
+    sys_text = rendered[0].content
+    assert "ASIN" in sys_text
+    assert "ONLY" in sys_text or "only" in sys_text
+
+
+def test_structured_json_system_message_demands_json_keys():
+    rendered = PROMPT_VARIANTS["structured_json"].format_messages(
+        context="x", question="y"
+    )
+    sys_text = rendered[0].content
+    for key in ("recommendation", "reasoning", "asins"):
+        assert key in sys_text
