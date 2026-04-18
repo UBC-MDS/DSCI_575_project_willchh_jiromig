@@ -29,3 +29,16 @@ class BM25LCRetriever(BaseRetriever):
     ) -> List[Document]:
         results = self.underlying.search(query, top_k=self.top_k)
         return [_to_document(r) for r in results]
+
+
+class SemanticLCRetriever(BaseRetriever):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    underlying: Any
+    top_k: int = 5
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        results = self.underlying.search(query, top_k=self.top_k)
+        return [_to_document(r) for r in results]
