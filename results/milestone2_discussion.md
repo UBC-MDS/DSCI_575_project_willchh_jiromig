@@ -5,7 +5,7 @@
 We use `meta-llama/Meta-Llama-3-8B-Instruct` via the HuggingFace Inference API
 (`langchain_huggingface.HuggingFaceEndpoint` + `ChatHuggingFace`). Rationale:
 
-- **No local compute required** — graders need only an `HF_TOKEN` and the accepted
+- **No local compute required** - graders need only an `HF_TOKEN` and the accepted
   Meta Llama 3 license, no GPU.
 - **8B parameters** is a strong balance for RAG: good instruction-following without
   needing 16GB+ VRAM that a local model would require.
@@ -55,15 +55,15 @@ Pipeline configuration: Hybrid retriever (EnsembleRetriever with RRF) + `strict_
 
 ## Tool Augmentation (Optional)
 
-We implemented the optional web-search tool via Tavily (`src/tools.py::web_search`, a LangChain `@tool`). The notebook demos it on *"best vitamin C serum for dark spots 2025"* and surfaces fresh results — Innisfree Green Tea Enzyme Vitamin C Brightening Serum, Glow Recipe Guava Vitamin C Dark Spot Brightening Treatment Serum, SkinCeuticals Silymarin CF — none of which exist in the Amazon reviews corpus. The tool is a no-op when `TAVILY_API_KEY` is unset, so the notebook degrades gracefully.
+We implemented the optional web-search tool via Tavily (`src/tools.py::web_search`, a LangChain `@tool`). The notebook demos it on *"best vitamin C serum for dark spots 2025"* and surfaces fresh results - Innisfree Green Tea Enzyme Vitamin C Brightening Serum, Glow Recipe Guava Vitamin C Dark Spot Brightening Treatment Serum, SkinCeuticals Silymarin CF - none of which exist in the Amazon reviews corpus. The tool is a no-op when `TAVILY_API_KEY` is unset, so the notebook degrades gracefully.
 
-The tool is not wired into the LCEL chain yet — exposing it to the LLM via `bind_tools` so the model can decide when to call it is a natural extension beyond Milestone 2.
+The tool is not wired into the LCEL chain yet - exposing it to the LLM via `bind_tools` so the model can decide when to call it is a natural extension beyond Milestone 2.
 
 ## Limitations
 
-1. **Numeric constraints (e.g. "under $30") are not enforced** — the LLM relies entirely on what surfaces from retrieval. The notebook's `build_context` demo shows all 10 retrieved products rendering with `Price: $nan` because the All Beauty metadata in our corpus does not populate `price`. A structured filtering step before generation — or a price backfill during ingestion — would address this.
+1. **Numeric constraints (e.g. "under $30") are not enforced** - the LLM relies entirely on what surfaces from retrieval. The notebook's `build_context` demo shows all 10 retrieved products rendering with `Price: $nan` because the All Beauty metadata in our corpus does not populate `price`. A structured filtering step before generation - or a price backfill during ingestion - would address this.
 
-2. **Single-review context per product, and a static corpus** — each product in the corpus includes only the most helpful review, which may not be representative; products with mixed reviews may appear more positive or negative than they actually are. Additionally, the Milestone 1 dataset ends in early 2023, so recent product launches are absent entirely — the notebook's `web_search` demo surfaces 2025 products (Innisfree Green Tea Enzyme, Glow Recipe Guava Vitamin C, SkinCeuticals Silymarin CF) that are missing from the corpus.
+2. **Single-review context per product, and a static corpus** - each product in the corpus includes only the most helpful review, which may not be representative; products with mixed reviews may appear more positive or negative than they actually are. Additionally, the Milestone 1 dataset ends in early 2023, so recent product launches are absent entirely - the notebook's `web_search` demo surfaces 2025 products (Innisfree Green Tea Enzyme, Glow Recipe Guava Vitamin C, SkinCeuticals Silymarin CF) that are missing from the corpus.
 
 3. **The hybrid retriever uses RRF (Reciprocal Rank Fusion)** on the RAG tab, while the Search tab uses the Milestone 1 min-max weighted hybrid. Different fusion algorithms can rank the same documents differently, which may confuse users comparing results across tabs.
 
