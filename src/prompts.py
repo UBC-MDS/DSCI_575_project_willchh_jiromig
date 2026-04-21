@@ -7,6 +7,7 @@ MAX_REVIEW_CHARS = 300
 
 
 def build_context(docs: Iterable[Document], max_chars: int = MAX_REVIEW_CHARS) -> str:
+    """Format retrieved documents into a numbered, prompt-ready context block."""
     blocks = []
     for i, doc in enumerate(docs, start=1):
         meta = doc.metadata or {}

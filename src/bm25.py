@@ -7,7 +7,10 @@ from src.utils import tokenize
 
 
 class BM25Retriever:
+    """Keyword-based retriever using BM25Okapi scoring."""
+
     def __init__(self):
+        """Initialize with empty index and corpus."""
         self.index = None
         self.corpus = []
         self.tokenized_corpus = []

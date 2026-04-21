@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.0] - (2026-04-22)
+
+### Added
+- LLM comparison experiment: `Qwen/Qwen3.5-2B` (2B) vs `Meta-Llama-3-8B-Instruct` (8B) across 5 queries with identical retrieval and prompt
+- Final exploration notebook (`notebooks/milestone3_final.ipynb`) with LLM comparison and Tavily tool demo
+- Final discussion (`results/final_discussion.md`) covering dataset scaling, LLM experiment, tool integration, code quality, and cloud deployment plan
+- Cloud deployment plan for AWS (S3 + ECS Fargate + HF Inference API)
+
+### Changed
+- Added docstrings to all public functions and classes in `src/`
+- Updated `README.md` with Qwen comparison model, final milestone notebook, and discussion file in repository structure
+
 ## [v0.2.0] - (2026-04-18)
 
 ### Added

@@ -67,7 +67,8 @@ flowchart TD
 |-------|------|---------|
 | **all-MiniLM-L6-v2** | Sentence-transformer (HuggingFace) | Encodes text into 384-dim normalized vectors for cosine similarity search via FAISS `IndexFlatIP` |
 | **BM25Okapi** | Statistical (bag-of-words) | Scores documents by term frequency / inverse document frequency; queries are tokenized with NLTK stopword removal and WordNet lemmatization |
-| **Meta-Llama-3-8B-Instruct** | Chat LLM (HuggingFace Inference API) | Generates grounded answers for the RAG tab via `ChatHuggingFace(HuggingFaceEndpoint(...))`; requires `HF_TOKEN` with the accepted Meta Llama 3 license |
+| **Meta-Llama-3-8B-Instruct** | Chat LLM (HuggingFace Inference API) | Default RAG model (8B params); generates grounded answers via `ChatHuggingFace(HuggingFaceEndpoint(...))`; requires `HF_TOKEN` with the accepted Meta Llama 3 license |
+| **Qwen/Qwen3.5-2B** | Chat LLM (HuggingFace Inference API) | Comparison model (2B params); tested in the final milestone LLM experiment for quality-vs-size analysis |
 
 ### Tech Stack
 
@@ -185,10 +186,12 @@ DSCI_575_project_willchh_jiromig/
 ├── notebooks/
 │   ├── milestone1_exploration.ipynb          # Data download and EDA
 │   ├── milestone1_retrieval_evaluations.ipynb # Retrieval testing and evaluation
-│   └── milestone2_rag.ipynb                 # RAG pipeline exploration and evaluation
+│   ├── milestone2_rag.ipynb                 # RAG pipeline exploration and evaluation
+│   └── milestone3_final.ipynb               # LLM comparison and tool demo
 ├── results/
 │   ├── milestone1_discussion.md  # Qualitative evaluation write-up
-│   └── milestone2_discussion.md  # RAG evaluation, model choice, limitations
+│   ├── milestone2_discussion.md  # RAG evaluation, model choice, limitations
+│   └── final_discussion.md       # LLM experiment, scaling, cloud deployment plan
 ├── src/
 │   ├── bm25.py                 # BM25 retriever class
 │   ├── semantic.py             # Semantic (FAISS) retriever class
