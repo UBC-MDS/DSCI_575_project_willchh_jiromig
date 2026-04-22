@@ -68,7 +68,7 @@ flowchart TD
 | **all-MiniLM-L6-v2** | Sentence-transformer (HuggingFace) | Encodes text into 384-dim normalized vectors for cosine similarity search via FAISS `IndexFlatIP` |
 | **BM25Okapi** | Statistical (bag-of-words) | Scores documents by term frequency / inverse document frequency; queries are tokenized with NLTK stopword removal and WordNet lemmatization |
 | **Meta-Llama-3-8B-Instruct** | Chat LLM (HuggingFace Inference API) | Default RAG model (8B params); generates grounded answers via `ChatHuggingFace(HuggingFaceEndpoint(...))`; requires `HF_TOKEN` with the accepted Meta Llama 3 license |
-| **Qwen/Qwen3.5-2B** | Chat LLM (HuggingFace Inference API) | Comparison model (2B params); tested in the final milestone LLM experiment for quality-vs-size analysis |
+| **Qwen3 1.7B** | Chat LLM (Ollama, local) | Comparison model (1.7B params); tested in the final milestone LLM experiment for quality-vs-size analysis; requires Ollama installed locally |
 
 ### Tech Stack
 
@@ -85,8 +85,9 @@ flowchart TD
 | Web app | Streamlit | 1.56.0 |
 | Testing | pytest (+ cov, xdist, randomly, playwright) | 9.0.2 |
 | LLM framework | LangChain (LCEL) | 1.2.15 |
-| LLM provider | HuggingFace Inference API | — |
-| LLM model | Meta-Llama-3-8B-Instruct | 8B params |
+| LLM provider | HuggingFace Inference API + Ollama (local) | — |
+| LLM model (default) | Meta-Llama-3-8B-Instruct | 8B params |
+| LLM model (comparison) | Qwen3 1.7B via Ollama | 1.7B params |
 | Web search (optional) | Tavily | 0.7.23 |
 | Linting & formatting | Ruff, Black, isort, pre-commit | — |
 | CI/CD | GitHub Actions (lint → test → validate-app) | ubuntu-latest |
@@ -142,7 +143,24 @@ flowchart TD
     >     --pattern "corpus.pkl" --dir indices/faiss_index
     > ```
 
-6.  Run to locally deploy streamlit app:
+6.  *(Optional)* To run the LLM comparison notebook with the local Qwen3 model, install [Ollama](https://ollama.com/download):
+
+    ```bash
+    # macOS
+    brew install ollama
+    # Linux
+    curl -fsSL https://ollama.com/install.sh | sh
+    # Windows: download from https://ollama.com/download
+    ```
+
+    Then start the server and pull the model:
+
+    ```bash
+    ollama serve          # keep this terminal open
+    ollama pull qwen3:1.7b  # in a second terminal
+    ```
+
+7.  Run to locally deploy streamlit app:
 
     ```bash
     make app

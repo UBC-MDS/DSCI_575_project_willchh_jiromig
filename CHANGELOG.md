@@ -8,14 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.3.0] - (2026-04-22)
 
 ### Added
-- LLM comparison experiment: `Qwen/Qwen3.5-2B` (2B) vs `Meta-Llama-3-8B-Instruct` (8B) across 5 queries with identical retrieval and prompt
-- Final exploration notebook (`notebooks/milestone3_final.ipynb`) with LLM comparison and Tavily tool demo
+- LLM comparison experiment: `qwen3:1.7b` (1.7B, Ollama local) vs `Meta-Llama-3-8B-Instruct` (8B, HF API) across 5 queries with identical retrieval and prompt
+- Final exploration notebook (`notebooks/milestone3_final.ipynb`) with LLM comparison and Tavily web search tool demo (3 queries)
 - Final discussion (`results/final_discussion.md`) covering dataset scaling, LLM experiment, tool integration, code quality, and cloud deployment plan
 - Cloud deployment plan for AWS (S3 + ECS Fargate + HF Inference API)
+- `langchain-ollama` dependency for local model inference via Ollama
+- Ollama setup instructions in README (macOS, Linux, Windows)
 
 ### Changed
 - Added docstrings to all public functions and classes in `src/`
-- Updated `README.md` with Qwen comparison model, final milestone notebook, and discussion file in repository structure
+- Updated `README.md` with Qwen3 comparison model, Ollama in tech stack, and final milestone files in repository structure
 
 ## [v0.2.0] - (2026-04-18)
 
