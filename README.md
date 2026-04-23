@@ -104,7 +104,7 @@ flowchart TD
 | Variable | Required | Purpose |
 |---|---|---|
 | `HF_TOKEN` | Yes (for RAG tab) | HuggingFace token with read access. Must have [accepted the Meta Llama 3 license](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct). |
-| `TAVILY_API_KEY` | Yes (for RAG with `web_search` tool) | Enables the optional web-search tool toggle in the RAG tab. Without it the toggle is disabled. |
+| `TAVILY_API_KEY` | Yes (for RAG with `web_search` tool) | Enables the optional web-search tool toggle in the RAG tab. Without it the toggle is disabled. Find more [here](https://www.tavily.com/). |
 
 Add these to your `.env` file (see `.env.example`).
 
