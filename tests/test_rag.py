@@ -123,7 +123,8 @@ def test_rag_pipeline_answer_passes_web_context_into_prompt(monkeypatch):
         rendered.messages[-1].content if hasattr(rendered, "messages") else rendered[-1].content
     )
     assert "Web Context:" in user_text
-    assert "[W1] fresh data" in user_text
+    assert "fresh data" in user_text
+    assert "[W1]" not in user_text
 
 
 def test_rag_pipeline_answer_catches_web_search_exception_and_warns(monkeypatch):
