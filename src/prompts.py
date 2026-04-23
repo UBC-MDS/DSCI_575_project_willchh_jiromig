@@ -32,14 +32,14 @@ def build_context(docs: Iterable[Document], max_chars: int = MAX_REVIEW_CHARS) -
 
 
 def build_web_context(snippets: Iterable[str]) -> str:
-    """Format Tavily snippets into a labeled prompt block with [Wn] citations.
+    """Format Tavily snippets into a plain prompt block, one snippet per line.
     Returns '' for empty input so the user template collapses cleanly.
     """
     items = [s for s in snippets if s]
     if not items:
         return ""
-    labeled = "\n".join(f"[W{i}] {s}" for i, s in enumerate(items, start=1))
-    return f"\nWeb Context:\n{labeled}\n"
+    body = "\n".join(f"- {s}" for s in items)
+    return f"\nWeb Context:\n{body}\n"
 
 
 DEFAULT_PROMPT_NAME = "strict_citation"
@@ -53,9 +53,9 @@ PROMPT_VARIANTS: dict[str, ChatPromptTemplate] = {
                 "system",
                 "You are an Amazon Beauty product assistant. Answer ONLY using the "
                 "provided reviews and metadata. Cite the product ASIN like [B001] for "
-                "every claim. If Web Context is provided, cite web snippets as [W1], "
-                "[W2], and so on. If the context is insufficient, reply: "
-                "'I don't have enough information.'",
+                "every claim. If Web Context is provided, you may use it but do not "
+                "attach any bracketed tags to web information. If the context is "
+                "insufficient, reply: 'I don't have enough information.'",
             ),
             ("user", _USER_TEMPLATE),
         ]
