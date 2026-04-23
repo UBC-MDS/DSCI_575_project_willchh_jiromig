@@ -19,7 +19,11 @@ def load_llm(
     model_id: str = DEFAULT_LLM_MODEL,
     max_new_tokens: int = 512,
     provider: str = "auto",
+    temperature: float = 0.1,
+    do_sample: bool = True,
+    seed: int = 42,
 ) -> BaseChatModel:
+    """Create a ChatHuggingFace LLM from the HF Inference API."""
     token = os.environ.get("HF_TOKEN")
     if not token:
         raise RuntimeError("Set HF_TOKEN in .env — see .env.example")
@@ -29,11 +33,16 @@ def load_llm(
         max_new_tokens=max_new_tokens,
         provider=provider,
         huggingfacehub_api_token=token,
+        temperature=temperature,
+        do_sample=do_sample,
+        seed=seed,
     )
     return ChatHuggingFace(llm=endpoint)
 
 
 class RAGPipeline:
+    """RAG pipeline composing retriever, context builder, prompt, and LLM via LCEL."""
+
     def __init__(
         self,
         bm25: Any,
@@ -43,6 +52,7 @@ class RAGPipeline:
         llm: Optional[BaseChatModel] = None,
         top_k: int = 5,
     ):
+        """Build the LCEL chain from retriever, prompt variant, and LLM."""
         self.retriever = wrap_retriever(retriever_name, bm25, semantic, top_k=top_k)
         self.prompt = PROMPT_VARIANTS[prompt_name]
         self.llm = llm if llm is not None else load_llm()
@@ -57,6 +67,7 @@ class RAGPipeline:
         )
 
     def answer(self, query: str) -> dict:
+        """Run the full RAG pipeline and return answer text with source documents."""
         docs = self.retriever.invoke(query)
         text = self.chain.invoke(query)
         return {

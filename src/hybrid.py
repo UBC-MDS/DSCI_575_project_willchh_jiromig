@@ -3,7 +3,10 @@ from src.semantic import SemanticRetriever
 
 
 class HybridRetriever:
+    """Hybrid retriever combining BM25 and semantic scores with min-max normalization."""
+
     def __init__(self, bm25: BM25Retriever, semantic: SemanticRetriever):
+        """Initialize with BM25 and semantic retriever instances."""
         self.bm25 = bm25
         self.semantic = semantic
 
