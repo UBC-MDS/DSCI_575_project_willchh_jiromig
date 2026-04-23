@@ -87,7 +87,9 @@ def test_rag_pipeline_answer_with_web_search_includes_snippets(monkeypatch):
     from src.rag_pipeline import RAGPipeline
 
     monkeypatch.setattr(
-        rag_pipeline_module, "web_search_snippets", lambda q: ["snippet alpha", "snippet beta"]
+        rag_pipeline_module,
+        "web_search_snippets",
+        lambda q, max_results=3: ["snippet alpha", "snippet beta"],
     )
 
     pipeline = RAGPipeline(bm25=bm25, semantic=semantic, retriever_name="BM25", llm=fake_llm)
@@ -113,7 +115,11 @@ def test_rag_pipeline_answer_passes_web_context_into_prompt(monkeypatch):
     from src import rag_pipeline as rag_pipeline_module
     from src.rag_pipeline import RAGPipeline
 
-    monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", lambda q: ["fresh data"])
+    monkeypatch.setattr(
+        rag_pipeline_module,
+        "web_search_snippets",
+        lambda q, max_results=3: ["fresh data"],
+    )
 
     pipeline = RAGPipeline(bm25=bm25, semantic=semantic, retriever_name="BM25", llm=fake_llm)
     pipeline.answer("q", use_web_search=True)
@@ -127,6 +133,66 @@ def test_rag_pipeline_answer_passes_web_context_into_prompt(monkeypatch):
     assert "[W1]" not in user_text
 
 
+def test_rag_pipeline_caps_hybrid_sources_at_top_k():
+    bm25 = MagicMock()
+    bm25.search.return_value = [
+        {
+            "parent_asin": f"A{i}",
+            "title": f"bm25-{i}",
+            "text": f"bm25 doc {i}",
+            "price": 1.0,
+            "average_rating": 4.0,
+            "score": 1.0,
+        }
+        for i in range(5)
+    ]
+    semantic = MagicMock()
+    semantic.search.return_value = [
+        {
+            "parent_asin": f"B{i}",
+            "title": f"sem-{i}",
+            "text": f"sem doc {i}",
+            "price": 1.0,
+            "average_rating": 4.0,
+            "score": 0.9,
+        }
+        for i in range(5)
+    ]
+    fake_llm = FakeListChatModel(responses=["ok"])
+
+    from src.rag_pipeline import RAGPipeline
+
+    pipeline = RAGPipeline(
+        bm25=bm25, semantic=semantic, retriever_name="Hybrid", llm=fake_llm, top_k=5
+    )
+    result = pipeline.answer("vitamin c")
+
+    assert len(result["sources"]) == 5
+
+
+def test_rag_pipeline_forwards_top_k_to_web_search(monkeypatch):
+    bm25, semantic = _stub_retrievers()
+    fake_llm = FakeListChatModel(responses=["ok"])
+
+    from src import rag_pipeline as rag_pipeline_module
+    from src.rag_pipeline import RAGPipeline
+
+    captured = {}
+
+    def _capture(q, max_results=3):
+        captured["max_results"] = max_results
+        return ["snippet"]
+
+    monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", _capture)
+
+    pipeline = RAGPipeline(
+        bm25=bm25, semantic=semantic, retriever_name="BM25", llm=fake_llm, top_k=7
+    )
+    pipeline.answer("q", use_web_search=True)
+
+    assert captured["max_results"] == 7
+
+
 def test_rag_pipeline_answer_catches_web_search_exception_and_warns(monkeypatch):
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["fallback answer"])
@@ -134,7 +200,7 @@ def test_rag_pipeline_answer_catches_web_search_exception_and_warns(monkeypatch)
     from src import rag_pipeline as rag_pipeline_module
     from src.rag_pipeline import RAGPipeline
 
-    def _raise(q):
+    def _raise(q, max_results=3):
         raise RuntimeError("tavily boom")
 
     monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", _raise)
