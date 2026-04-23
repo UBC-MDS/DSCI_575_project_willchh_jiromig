@@ -125,23 +125,26 @@ def test_build_web_context_returns_empty_string_for_empty_list():
     assert build_web_context([]) == ""
 
 
-def test_build_web_context_labels_snippets_with_w_citations():
+def test_build_web_context_renders_snippets_without_bracket_tags():
     out = build_web_context(["alpha", "beta"])
     assert out.startswith("\nWeb Context:\n")
     assert out.endswith("\n")
-    assert "[W1] alpha" in out
-    assert "[W2] beta" in out
+    assert "alpha" in out
+    assert "beta" in out
+    assert "[W1]" not in out
+    assert "[W2]" not in out
 
 
 def test_build_web_context_drops_empty_snippets():
     out = build_web_context(["a", "", "b"])
-    assert "[W1] a" in out
-    assert "[W2] b" in out
-    assert "[W3]" not in out
+    assert "a" in out
+    assert "b" in out
+    lines = [line for line in out.splitlines() if line.startswith("-")]
+    assert len(lines) == 2
 
 
 def test_each_prompt_variant_renders_web_context_when_populated():
-    populated = "\nWeb Context:\n[W1] fresh snippet\n"
+    populated = "\nWeb Context:\n- fresh snippet\n"
     inputs = {
         "context": "[1] ASIN: B001 review",
         "web_context": populated,
@@ -151,16 +154,17 @@ def test_each_prompt_variant_renders_web_context_when_populated():
         rendered = template.format_messages(**inputs)
         user_text = rendered[1].content
         assert "Web Context:" in user_text
-        assert "[W1] fresh snippet" in user_text
+        assert "fresh snippet" in user_text
         assert "[1] ASIN: B001 review" in user_text
 
 
-def test_strict_citation_system_message_explains_w_citation_format():
+def test_strict_citation_system_message_forbids_web_bracket_tags():
     rendered = PROMPT_VARIANTS["strict_citation"].format_messages(
         context="x", web_context="", question="y"
     )
     sys_text = rendered[0].content
-    assert "[W1]" in sys_text
+    assert "[W1]" not in sys_text
+    assert "do not attach any bracketed tags to web information" in sys_text
 
 
 def test_helpful_shopper_system_message_mentions_web_context_usage():
