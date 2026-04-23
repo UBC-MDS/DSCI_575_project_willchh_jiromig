@@ -31,9 +31,20 @@ def build_context(docs: Iterable[Document], max_chars: int = MAX_REVIEW_CHARS) -
     return "\n\n".join(blocks)
 
 
+def build_web_context(snippets: Iterable[str]) -> str:
+    """Format Tavily snippets into a plain prompt block, one snippet per line.
+    Returns '' for empty input so the user template collapses cleanly.
+    """
+    items = [s for s in snippets if s]
+    if not items:
+        return ""
+    body = "\n".join(f"- {s}" for s in items)
+    return f"\nWeb Context:\n{body}\n"
+
+
 DEFAULT_PROMPT_NAME = "strict_citation"
 
-_USER_TEMPLATE = "Context:\n{context}\n\nQuestion: {question}\n\nAnswer:"
+_USER_TEMPLATE = "Context:\n{context}\n{web_context}\nQuestion: {question}\n\nAnswer:"
 
 PROMPT_VARIANTS: dict[str, ChatPromptTemplate] = {
     "strict_citation": ChatPromptTemplate.from_messages(
@@ -42,8 +53,9 @@ PROMPT_VARIANTS: dict[str, ChatPromptTemplate] = {
                 "system",
                 "You are an Amazon Beauty product assistant. Answer ONLY using the "
                 "provided reviews and metadata. Cite the product ASIN like [B001] for "
-                "every claim. If the context is insufficient, reply: "
-                "'I don't have enough information.'",
+                "every claim. If Web Context is provided, you may use it but do not "
+                "attach any bracketed tags to web information. If the context is "
+                "insufficient, reply: 'I don't have enough information.'",
             ),
             ("user", _USER_TEMPLATE),
         ]
@@ -53,7 +65,9 @@ PROMPT_VARIANTS: dict[str, ChatPromptTemplate] = {
             (
                 "system",
                 "You are a friendly Amazon shopping assistant. Use the reviews to "
-                "recommend 1-2 products. Mention price and rating when relevant.",
+                "recommend 1-2 products. Mention price and rating when relevant. "
+                "If Web Context is provided, you may use it for ingredient, safety, "
+                "or recency details.",
             ),
             ("user", _USER_TEMPLATE),
         ]

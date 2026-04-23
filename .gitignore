@@ -233,3 +233,5 @@ local/
 feedback.csv
 index.faiss
 rag_eval.json
+llm_comparison.json
+tool_demo.json

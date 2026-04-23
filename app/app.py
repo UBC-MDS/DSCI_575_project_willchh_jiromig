@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,49 @@ from src.semantic import SemanticRetriever
 BASE_DIR = Path(__file__).resolve().parent.parent
 INDICES_DIR = BASE_DIR / "indices"
 FEEDBACK_PATH = BASE_DIR / "data" / "feedback.csv"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
+
+SAMPLE_PLACEHOLDER = "— choose a sample query —"
+
+WEB_DEMO_QUERIES = [
+    "best drugstore sunscreen 2026 dermatologist recommended",
+    "best retinol cream 2026 under $30",
+    "best vitamin C serum 2026 for hyperpigmentation",
+]
+
+
+@st.cache_data
+def load_search_samples() -> dict[str, str]:
+    """Load curated retrieval queries from ground_truth.csv, labeled by difficulty."""
+    path = PROCESSED_DIR / "ground_truth.csv"
+    if not path.exists():
+        return {}
+    out: dict[str, str] = {}
+    with open(path, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            out[f"[{row['difficulty']}] {row['query']}"] = row["query"]
+    return out
+
+
+@st.cache_data
+def load_rag_samples() -> dict[str, str]:
+    """Load curated RAG queries plus product-focused web-demo queries."""
+    path = PROCESSED_DIR / "rag_queries.csv"
+    out: dict[str, str] = {}
+    if path.exists():
+        with open(path, encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                out[f"[{row['category']}] {row['query']}"] = row["query"]
+    for q in WEB_DEMO_QUERIES:
+        out[f"[web-demo] {q}"] = q
+    return out
+
+
+def _apply_sample(mapping: dict[str, str], target_key: str, selector_key: str) -> None:
+    """on_change callback: copy the selected sample query into the text-input state."""
+    choice = st.session_state.get(selector_key)
+    if choice and choice in mapping:
+        st.session_state[target_key] = mapping[choice]
 
 
 @st.cache_resource
@@ -94,12 +138,23 @@ def display_result(result: dict, idx: int, query: str, mode: str) -> None:
 
 
 def _render_search_tab(retrievers: dict) -> None:
+    """Render the Search tab: sidebar controls, sample selector, and results list."""
     with st.sidebar:
         st.header("Search Settings")
         mode = st.radio("Search Mode", list(retrievers.keys()), key="search_mode")
         top_k = st.slider(
             "Number of results", min_value=1, max_value=10, value=5, key="search_topk"
         )
+
+    samples = load_search_samples()
+    st.selectbox(
+        "Try a sample query",
+        options=[SAMPLE_PLACEHOLDER] + list(samples.keys()),
+        key="search_sample",
+        on_change=_apply_sample,
+        args=(samples, "search_query", "search_sample"),
+        help="Selecting a sample populates the search box; you can still edit it before submitting.",
+    )
 
     query = st.text_input(
         "Enter your search query",
@@ -116,6 +171,7 @@ def _render_search_tab(retrievers: dict) -> None:
 
 
 def _render_rag_tab(retrievers: dict) -> None:
+    """Render the RAG tab: sidebar controls, query input, answer, and sources."""
     has_tavily = bool(os.environ.get("TAVILY_API_KEY"))
 
     with st.sidebar:
@@ -133,6 +189,19 @@ def _render_rag_tab(retrievers: dict) -> None:
             key="rag_tools",
         )
 
+    samples = load_rag_samples()
+    st.selectbox(
+        "Try a sample query",
+        options=[SAMPLE_PLACEHOLDER] + list(samples.keys()),
+        key="rag_sample",
+        on_change=_apply_sample,
+        args=(samples, "rag_query", "rag_sample"),
+        help=(
+            "Selecting a sample populates the question box; you can still edit it before "
+            "submitting. [web-demo] queries need the Tavily toggle on to be answered well."
+        ),
+    )
+
     query = st.text_input(
         "Ask a question about Amazon Beauty products",
         placeholder="e.g., what's a good vitamin C serum under $25?",
@@ -142,10 +211,11 @@ def _render_rag_tab(retrievers: dict) -> None:
     if not query:
         return
 
+    use_web_search = bool(st.session_state.get("rag_tools", False))
     pipeline = get_rag_pipeline(retriever_name, prompt_name, top_k)
     with st.spinner("Generating answer..."):
         try:
-            result = pipeline.answer(query)
+            result = pipeline.answer(query, use_web_search=use_web_search)
         except RuntimeError as exc:
             st.error(str(exc))
             return
@@ -163,20 +233,49 @@ def _render_rag_tab(retrievers: dict) -> None:
     else:
         st.info(result["answer"])
 
-    st.subheader("Sources")
-    for idx, src in enumerate(result["sources"], start=1):
-        result_dict = {
-            "parent_asin": src.get("parent_asin"),
-            "title": src.get("title"),
-            "text": src.get("page_content", ""),
-            "price": src.get("price"),
-            "average_rating": src.get("average_rating"),
-            "score": src.get("score"),
-        }
-        display_result(result_dict, idx, query, mode=f"rag:{retriever_name}:{prompt_name}")
+    if result.get("web_warning"):
+        st.warning(result["web_warning"])
+
+    mode_label = f"rag:{retriever_name}:{prompt_name}"
+    has_web = bool(result.get("web_sources")) and not result.get("web_warning")
+
+    def _render_product_sources() -> None:
+        """Render the retrieved product-source cards beneath the answer."""
+        for idx, src in enumerate(result["sources"], start=1):
+            result_dict = {
+                "parent_asin": src.get("parent_asin"),
+                "title": src.get("title"),
+                "text": src.get("page_content", ""),
+                "price": src.get("price"),
+                "average_rating": src.get("average_rating"),
+                "score": src.get("score"),
+            }
+            display_result(result_dict, idx, query, mode=mode_label)
+
+    def _render_web_sources() -> None:
+        """Render the Tavily snippet cards beneath the answer."""
+        st.caption("Tavily snippets that fed into the answer.")
+        for i, snippet in enumerate(result["web_sources"], start=1):
+            with st.container(border=True):
+                st.markdown(f"**Source {i}**")
+                cleaned = re.sub(r"(?m)^#{1,6}\s*", "", snippet)
+                st.text(cleaned)
+
+    if has_web:
+        col_web, col_prod = st.columns(2)
+        with col_web:
+            st.subheader("Web Sources (Tavily)")
+            _render_web_sources()
+        with col_prod:
+            st.subheader("Product Sources")
+            _render_product_sources()
+    else:
+        st.subheader("Sources")
+        _render_product_sources()
 
 
 def main():
+    """Entry point: configure the Streamlit page and render the Search and RAG tabs."""
     st.set_page_config(page_title="Amazon Beauty Search", layout="wide")
     st.title("Amazon Beauty Product Search")
 
