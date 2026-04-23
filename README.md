@@ -42,11 +42,8 @@ flowchart TD
 
     subgraph Generate
         Ctx["build_context"] --> Tmpl["ChatPromptTemplate<br/>(strict / shopper / json)"]
-        WCtx["build_web_context"] --> Tmpl
         Tmpl --> LLM["ChatHuggingFace<br/>Meta-Llama-3-8B-Instruct"]
     end
-
-    Web["Tavily web_search<br/>(optional tool)"] --> WCtx
 
     C --> D
     C --> E
@@ -57,7 +54,6 @@ flowchart TD
 
     G -->|Search tab| Hybrid
     G -->|RAG tab| Ens
-    G -.->|RAG tab + toggle| Web
     Ens --> Ctx
     LLM --> Ans["Answer + sources"]
 
@@ -71,8 +67,7 @@ flowchart TD
 |-------|------|---------|
 | **all-MiniLM-L6-v2** | Sentence-transformer (HuggingFace) | Encodes text into 384-dim normalized vectors for cosine similarity search via FAISS `IndexFlatIP` |
 | **BM25Okapi** | Statistical (bag-of-words) | Scores documents by term frequency / inverse document frequency; queries are tokenized with NLTK stopword removal and WordNet lemmatization |
-| **Meta-Llama-3-8B-Instruct** | Chat LLM (HuggingFace Inference API) | Default RAG model (8B params); generates grounded answers via `ChatHuggingFace(HuggingFaceEndpoint(...))`; requires `HF_TOKEN` with the accepted Meta Llama 3 license |
-| **Qwen3 1.7B** | Chat LLM (Ollama, local) | Comparison model (1.7B params); tested in the final milestone LLM experiment for quality-vs-size analysis; requires Ollama installed locally |
+| **Meta-Llama-3-8B-Instruct** | Chat LLM (HuggingFace Inference API) | Generates grounded answers for the RAG tab via `ChatHuggingFace(HuggingFaceEndpoint(...))`; requires `HF_TOKEN` with the accepted Meta Llama 3 license |
 
 ### Tech Stack
 
@@ -89,24 +84,14 @@ flowchart TD
 | Web app | Streamlit | 1.56.0 |
 | Testing | pytest (+ cov, xdist, randomly, playwright) | 9.0.2 |
 | LLM framework | LangChain (LCEL) | 1.2.15 |
-| LLM provider | HuggingFace Inference API + Ollama (local) | — |
-| LLM model (default) | Meta-Llama-3-8B-Instruct | 8B params |
-| LLM model (comparison) | Qwen3 1.7B via Ollama | 1.7B params |
+| LLM provider | HuggingFace Inference API | — |
+| LLM model | Meta-Llama-3-8B-Instruct | 8B params |
 | Web search (optional) | Tavily | 0.7.23 |
 | Linting & formatting | Ruff, Black, isort, pre-commit | — |
 | CI/CD | GitHub Actions (lint → test → validate-app) | ubuntu-latest |
 | Build automation | GNU Make | — |
 
 ## Developer Setup
-
-### Required environment variables
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `HF_TOKEN` | Yes (for RAG tab) | HuggingFace token with read access. Must have [accepted the Meta Llama 3 license](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct). |
-| `TAVILY_API_KEY` | Yes (for RAG with `web_search` tool) | Enables the optional web-search tool toggle in the RAG tab. Without it the toggle is disabled. |
-
-Add these to your `.env` file (see `.env.example`).
 
 ### Dependencies
 
@@ -141,66 +126,41 @@ Add these to your `.env` file (see `.env.example`).
     > **Note:** Building the semantic (FAISS) index encodes ~112K products and can take
     > 3-15 minutes depending on hardware. If you prefer to skip this step, download
     > the pre-built indices from the
-    > [GitHub Release](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases/tag/v0.3.0)
+    > [GitHub Release](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases/tag/v0.1.0)
     > instead but make sure to follow the indices/ structure below under Repository Structure:
     >
     > The following commands requires [Github CLI](https://cli.github.com/):
     >
     > ```bash
     > make download-data build-corpus
-    > gh release download v0.3.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
     >     --pattern "bm25_index.pkl" --dir indices
-    > gh release download v0.3.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
     >     --pattern "index.faiss" --dir indices/faiss_index
-    > gh release download v0.3.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
     >     --pattern "corpus.pkl" --dir indices/faiss_index
     > ```
 
-6.  *(Optional)* To run the LLM comparison notebook with the local Qwen3 model, install [Ollama](https://ollama.com/):
-    > Download Ollama via the official link here (all platforms): <https://ollama.com/download>
-
-    Or simply run the following commands
-
-    ```bash
-    # macOS or Linux
-    curl -fsSL https://ollama.com/install.sh | sh
-
-    # Windows (on powershell)
-    irm https://ollama.com/install.ps1 | iex
-    ```
-
-    Then start an Ollama server and pull the model:
-
-    ```bash
-    ollama serve   # keep this terminal open
-    ```
-
-    Then on a second terminal, pull the model:
-
-    ```bash
-    ollama pull qwen3:1.7b
-    ```
-
-7.  Run to locally deploy streamlit app:
+6.  Run to locally deploy streamlit app:
 
     ```bash
     make app
     ```
 
-8.  If you want to run the test suite:
+7.  If you want to run the test suite:
 
     ```bash
     make test
     ```
 
-9.  For rebuilding the corpus/embeddings:
+8.  For rebuilding the corpus/embeddings:
 
     ```bash
     make build-corpus
     make build-indices
     ```
 
-10. For linting and formatting:
+9.  For linting and formatting:
 
     ```bash
     make lint # linting
@@ -216,10 +176,7 @@ DSCI_575_project_willchh_jiromig/
 ├── data/
 │   ├── raw/                    # Downloaded parquet files (gitignored)
 │   ├── processed/              # Cleaned corpus and ground truth queries
-│   └── eval_outputs/           # Eval outputs from rag, and llm_comparison notebooks
-│       ├── llm_comparison.json
-│       └── rag_eval.json
-│       └── tool_demo.json
+│   └── eval_outputs/           # RAG evaluation outputs (generated by milestone2_rag.ipynb)
 ├── indices/                    # Persisted BM25 and FAISS indices (gitignored)
 │   ├── bm25_index.pkl          # Follow the following structure for indices
 │   └── faiss_index/
@@ -228,12 +185,10 @@ DSCI_575_project_willchh_jiromig/
 ├── notebooks/
 │   ├── milestone1_exploration.ipynb          # Data download and EDA
 │   ├── milestone1_retrieval_evaluations.ipynb # Retrieval testing and evaluation
-│   ├── milestone2_rag.ipynb                 # RAG pipeline exploration and evaluation
-│   └── milestone3_final.ipynb               # LLM comparison and tool demo
+│   └── milestone2_rag.ipynb                 # RAG pipeline exploration and evaluation
 ├── results/
 │   ├── milestone1_discussion.md  # Qualitative evaluation write-up
-│   ├── milestone2_discussion.md  # RAG evaluation, model choice, limitations
-│   └── final_discussion.md       # LLM experiment, scaling, cloud deployment plan
+│   └── milestone2_discussion.md  # RAG evaluation, model choice, limitations
 ├── src/
 │   ├── bm25.py                 # BM25 retriever class
 │   ├── semantic.py             # Semantic (FAISS) retriever class
@@ -289,6 +244,15 @@ The RAG tab in the Streamlit app composes four components into a Retrieval-Augme
    - `helpful_shopper` — friendly recommendation style, mentions price and rating
    - `structured_json` — returns a JSON object with `recommendation`, `reasoning`, `asins`
 4. **LLM** — `ChatHuggingFace(HuggingFaceEndpoint(repo_id="meta-llama/Meta-Llama-3-8B-Instruct"))` via the HuggingFace Inference API. No local GPU required.
+
+### Required environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `HF_TOKEN` | Yes (for RAG tab) | HuggingFace token with read access. Must have [accepted the Meta Llama 3 license](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct). |
+| `TAVILY_API_KEY` | No | Enables the optional web-search tool toggle in the RAG tab. Without it the toggle is disabled. |
+
+Add these to your `.env` file (see `.env.example`).
 
 ### RAG usage
 
