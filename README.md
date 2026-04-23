@@ -135,29 +135,37 @@ flowchart TD
     >
     > ```bash
     > make download-data build-corpus
-    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    > gh release download v0.3.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
     >     --pattern "bm25_index.pkl" --dir indices
-    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    > gh release download v0.3.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
     >     --pattern "index.faiss" --dir indices/faiss_index
-    > gh release download v0.1.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
+    > gh release download v0.3.0 --repo UBC-MDS/DSCI_575_project_willchh_jiromig \
     >     --pattern "corpus.pkl" --dir indices/faiss_index
     > ```
 
-6.  *(Optional)* To run the LLM comparison notebook with the local Qwen3 model, install [Ollama](https://ollama.com/download):
+6.  *(Optional)* To run the LLM comparison notebook with the local Qwen3 model, install [Ollama](https://ollama.com/):
+    > Download Ollama via the official link here (all platforms): <https://ollama.com/download>
+
+    Or simply run the following commands
 
     ```bash
-    # macOS
-    brew install ollama
-    # Linux
+    # macOS or Linux
     curl -fsSL https://ollama.com/install.sh | sh
-    # Windows: download from https://ollama.com/download
+
+    # Windows (on powershell)
+    irm https://ollama.com/install.ps1 | iex
     ```
 
-    Then start the server and pull the model:
+    Then start an Ollama server and pull the model:
 
     ```bash
-    ollama serve          # keep this terminal open
-    ollama pull qwen3:1.7b  # in a second terminal
+    ollama serve   # keep this terminal open
+    ```
+
+    Then on a second terminal, pull the model:
+
+    ```bash
+    ollama pull qwen3:1.7b
     ```
 
 7.  Run to locally deploy streamlit app:
@@ -166,20 +174,20 @@ flowchart TD
     make app
     ```
 
-7.  If you want to run the test suite:
+8.  If you want to run the test suite:
 
     ```bash
     make test
     ```
 
-8.  For rebuilding the corpus/embeddings:
+9.  For rebuilding the corpus/embeddings:
 
     ```bash
     make build-corpus
     make build-indices
     ```
 
-9.  For linting and formatting:
+10. For linting and formatting:
 
     ```bash
     make lint # linting
