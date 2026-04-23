@@ -53,6 +53,7 @@ class RAGPipeline:
         top_k: int = 5,
     ):
         """Build the LCEL chain from retriever, prompt variant, and LLM."""
+        self.top_k = top_k
         self.retriever = wrap_retriever(retriever_name, bm25, semantic, top_k=top_k)
         self.prompt = PROMPT_VARIANTS[prompt_name]
         self.llm = llm if llm is not None else load_llm()
@@ -65,12 +66,12 @@ class RAGPipeline:
         a labeled Web Context block in the prompt. Tavily failures are caught and
         surfaced via ``web_warning`` so the RAG path still produces an answer.
         """
-        docs = self.retriever.invoke(query)
+        docs = self.retriever.invoke(query)[: self.top_k]
         web_sources: list[str] = []
         web_warning: Optional[str] = None
         if use_web_search:
             try:
-                web_sources = web_search_snippets(query)
+                web_sources = web_search_snippets(query, max_results=self.top_k)
             except Exception as exc:  # noqa: BLE001
                 web_warning = f"Web search failed: {exc}"
 
