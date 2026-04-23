@@ -144,7 +144,7 @@ We outline how we plan to deploy the Amazon Beauty RAG system on **AWS**, using 
 
 Everything we currently persist under `data/` and `indices/` goes to **S3** with a prefix-based layout, following the `model-artifacts/` / `eb-source/` convention from the course.
 
-| Data | S3 location | Notes |
+| Data | S3 location (Hypotheitical) | Notes |
 |---|---|---|
 | Raw data (JSONL.gz) | `s3://beauty-rag/data/raw/` | Sourced from the HuggingFace McAuley-Lab bucket. An S3 lifecycle rule transitions objects to Glacier after 90 days — raw data is only re-read during full corpus rebuilds. |
 | Processed corpus (Parquet) | `s3://beauty-rag/data/processed/product_corpus.parquet` | Bucket versioning enabled so a bad rebuild can be rolled back to the previous object version. |
