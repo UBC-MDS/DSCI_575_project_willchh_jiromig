@@ -42,8 +42,11 @@ flowchart TD
 
     subgraph Generate
         Ctx["build_context"] --> Tmpl["ChatPromptTemplate<br/>(strict / shopper / json)"]
+        WCtx["build_web_context"] --> Tmpl
         Tmpl --> LLM["ChatHuggingFace<br/>Meta-Llama-3-8B-Instruct"]
     end
+
+    Web["Tavily web_search<br/>(optional tool)"] --> WCtx
 
     C --> D
     C --> E
@@ -54,6 +57,7 @@ flowchart TD
 
     G -->|Search tab| Hybrid
     G -->|RAG tab| Ens
+    G -.->|RAG tab + toggle| Web
     Ens --> Ctx
     LLM --> Ans["Answer + sources"]
 
@@ -95,6 +99,15 @@ flowchart TD
 
 ## Developer Setup
 
+### Required environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `HF_TOKEN` | Yes (for RAG tab) | HuggingFace token with read access. Must have [accepted the Meta Llama 3 license](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct). |
+| `TAVILY_API_KEY` | Yes (for RAG with `web_search` tool) | Enables the optional web-search tool toggle in the RAG tab. Without it the toggle is disabled. |
+
+Add these to your `.env` file (see `.env.example`).
+
 ### Dependencies
 
 -   `conda` (version 26.1.0 or higher)
@@ -128,7 +141,7 @@ flowchart TD
     > **Note:** Building the semantic (FAISS) index encodes ~112K products and can take
     > 3-15 minutes depending on hardware. If you prefer to skip this step, download
     > the pre-built indices from the
-    > [GitHub Release](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases/tag/v0.1.0)
+    > [GitHub Release](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/releases/tag/v0.3.0)
     > instead but make sure to follow the indices/ structure below under Repository Structure:
     >
     > The following commands requires [Github CLI](https://cli.github.com/):
@@ -276,15 +289,6 @@ The RAG tab in the Streamlit app composes four components into a Retrieval-Augme
    - `helpful_shopper` — friendly recommendation style, mentions price and rating
    - `structured_json` — returns a JSON object with `recommendation`, `reasoning`, `asins`
 4. **LLM** — `ChatHuggingFace(HuggingFaceEndpoint(repo_id="meta-llama/Meta-Llama-3-8B-Instruct"))` via the HuggingFace Inference API. No local GPU required.
-
-### Required environment variables
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `HF_TOKEN` | Yes (for RAG tab) | HuggingFace token with read access. Must have [accepted the Meta Llama 3 license](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct). |
-| `TAVILY_API_KEY` | No | Enables the optional web-search tool toggle in the RAG tab. Without it the toggle is disabled. |
-
-Add these to your `.env` file (see `.env.example`).
 
 ### RAG usage
 
