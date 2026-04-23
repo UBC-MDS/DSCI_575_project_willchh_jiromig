@@ -19,6 +19,9 @@ def load_llm(
     model_id: str = DEFAULT_LLM_MODEL,
     max_new_tokens: int = 512,
     provider: str = "auto",
+    temperature: float = 0.1,
+    do_sample: bool = True,
+    seed: int = 42,
 ) -> BaseChatModel:
     """Create a ChatHuggingFace LLM from the HF Inference API."""
     token = os.environ.get("HF_TOKEN")
@@ -30,6 +33,9 @@ def load_llm(
         max_new_tokens=max_new_tokens,
         provider=provider,
         huggingfacehub_api_token=token,
+        temperature=temperature,
+        do_sample=do_sample,
+        seed=seed,
     )
     return ChatHuggingFace(llm=endpoint)
 
