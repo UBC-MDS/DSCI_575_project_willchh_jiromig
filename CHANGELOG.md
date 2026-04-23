@@ -8,16 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.3.0] - (2026-04-22)
 
 ### Added
-- LLM comparison experiment: `qwen3:1.7b` (1.7B, Ollama local) vs `Meta-Llama-3-8B-Instruct` (8B, HF API) across 5 queries with identical retrieval and prompt
-- Final exploration notebook (`notebooks/milestone3_final.ipynb`) with LLM comparison and Tavily web search tool demo (3 queries)
-- Final discussion (`results/final_discussion.md`) covering dataset scaling, LLM experiment, tool integration, code quality, and cloud deployment plan
-- Cloud deployment plan for AWS (S3 + ECS Fargate + HF Inference API)
-- `langchain-ollama` dependency for local model inference via Ollama
-- Ollama setup instructions in README (macOS, Linux, Windows)
+- LLM comparison experiment: `qwen3:1.7b` (1.7B, Ollama local) vs `Meta-Llama-3-8B-Instruct` (8B, HF API) across 5 queries with identical retrieval and prompt ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Final exploration notebook (`notebooks/milestone3_final.ipynb`) with LLM comparison and Tavily web search tool demo (3 queries) ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Final discussion (`results/final_discussion.md`) covering dataset scaling, LLM experiment, tool integration, code quality, and cloud deployment plan ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Cloud deployment plan for AWS grounded in DSCI 525 services: S3 for artifacts, Elastic Beanstalk (load-balanced) for the Streamlit app, HF Inference API by default with SageMaker as the self-hosted alternative ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- `langchain-ollama` dependency for local model inference via Ollama ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Ollama setup instructions in README (macOS, Linux, Windows) ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- `temperature`, `seed`, and `do_sample` arguments on `load_llm` for reproducible generation (`src/rag_pipeline.py`) ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Eval output artifacts for the final milestone: `data/eval_outputs/llm_comparison.json` and `data/eval_outputs/tool_demo.json` ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
 
 ### Changed
-- Added docstrings to all public functions and classes in `src/`
-- Updated `README.md` with Qwen3 comparison model, Ollama in tech stack, and final milestone files in repository structure
+- Added docstrings to all public functions and classes in `src/` ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Updated `README.md` with Qwen3 comparison model, Ollama in tech stack, final milestone files in repository structure, and the new `data/eval_outputs/` artifacts ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Pre-built index download instructions in README now point at the `v0.3.0` GitHub Release instead of `v0.1.0` ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
 
 ## [v0.2.0] - (2026-04-18)
 
