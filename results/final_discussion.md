@@ -72,7 +72,7 @@ Qwen3 1.7B's structured formatting and uniform rating surfacing would be an exce
 
 ## Step 2: Additional Feature (Option 2: Tool Integration + Option 3: Scale to ≥ 100K)
 
-We implemented **Option 3 (Scale to ≥ 100K Products)** as the primary feature and **Option 2 (Tool Integration)** as a secondary feature. Both are demonstrated in `notebooks/milestone3_final.ipynb`.
+We implemented **Option 3 (Scale to ≥ 100K Products)** as the primary feature and **Option 2 (Tool Integration)** as a secondary feature. Option 3 is demonstrated in `notebooks/milestone3_final.ipynb`; Option 2 is demonstrated there and wired end-to-end into the Streamlit RAG tab so users can flip the checkbox and see web snippets augment the RAG answer in real time.
 
 ### What We Implemented
 
@@ -100,7 +100,11 @@ def web_search(query: str, max_results: int = 3) -> str:
     return "\n".join([r["content"] for r in results["results"]])
 ```
 
-It fails soft when `TAVILY_API_KEY` is missing (returns an empty string). The Streamlit RAG tab disables the web-search toggle in that case.
+Alongside the `@tool`, `src/tools.py` exposes `web_search_snippets(query, max_results) -> list[str]` which is the same Tavily call but returning the snippets as a list so callers can label them individually. The pipeline uses this helper directly so each snippet keeps its boundary for `[W1]`, `[W2]`, … citations.
+
+**End-to-end wiring.** `RAGPipeline.answer(query, use_web_search=False)` now takes a flag. When on, it calls `web_search_snippets(query)`, builds a labeled `Web Context:` block via the new `build_web_context` helper in `src/prompts.py`, and injects it into the prompt through a new `{web_context}` template variable. The `strict_citation` and `helpful_shopper` system prompts were updated to cite web snippets as `[W1]`, `[W2]`, … distinct from product ASIN citations. `structured_json`'s schema was deliberately left untouched. On Tavily failure the pipeline catches the exception, returns a `web_warning` string, and continues with RAG-only context — the answer is still produced from reviews.
+
+**UI.** The Streamlit RAG tab's web-search checkbox is disabled when `TAVILY_API_KEY` is missing; when enabled and toggled on, the tab passes the flag through to `pipeline.answer()`. When web results come back, the tab renders **Web Sources (Tavily)** and **Product Sources** side-by-side (`st.columns(2)`), each web snippet as a bordered card with its `[Wn]` label, and a caption linking the cards back to the citations in the answer. On Tavily failure the tab surfaces the `web_warning` via `st.warning` above the single-column product sources.
 
 **Key results - 3 example queries where the tool was exercised (`notebooks/milestone3_final.ipynb`, cell `2246391a`):**
 
@@ -116,7 +120,7 @@ It fails soft when `TAVILY_API_KEY` is missing (returns an empty string). The St
 - Product-review corpora have systematic blind spots: ingredient interactions, recency-bound questions, and safety / regulatory news. A recommender that covers only product picks will feel frustrating for users who ask the other three question types.
 - The tool is **additive, not a replacement**. On our five comparison queries (Q1–Q5 in Step 1) RAG is still the better answer source — the corpus has strong, opinionated, grounded signal for product recommendations. A production system would **route** queries by type: product recommendations → RAG, ingredient / safety / recency → web.
 
-Code references: `src/tools.py`, `app/app.py` (RAG tab toggle), `notebooks/milestone3_final.ipynb` (demo cells).
+Code references: `src/tools.py` (`@tool` + `web_search_snippets`), `src/prompts.py` (`build_web_context`, `{web_context}` template variable, updated system prompts), `src/rag_pipeline.py` (`RAGPipeline.answer(..., use_web_search=...)` with soft-fail), `app/app.py` (checkbox wiring and side-by-side Web/Product Sources layout), `notebooks/milestone3_final.ipynb` (demo cells), `docs/superpowers/specs/2026-04-22-web-search-streamlit-design.md` (design spec).
 
 ## Step 3: Improve Documentation and Code Quality
 
