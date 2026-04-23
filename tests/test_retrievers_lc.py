@@ -13,6 +13,7 @@ from src.retrievers_lc import (
 
 
 def test_bm25_lc_returns_documents_with_m1_metadata():
+    """BM25LCRetriever wraps underlying M1 results as LangChain Documents with M1 metadata."""
     underlying = MagicMock()
     underlying.search.return_value = [
         {
@@ -42,6 +43,7 @@ def test_bm25_lc_returns_documents_with_m1_metadata():
 
 
 def test_semantic_lc_returns_documents_with_m1_metadata():
+    """SemanticLCRetriever wraps underlying results as Documents carrying M1 metadata."""
     underlying = MagicMock()
     underlying.search.return_value = [
         {
@@ -71,6 +73,7 @@ def test_semantic_lc_returns_documents_with_m1_metadata():
 
 
 def test_build_ensemble_returns_ensemble_with_two_retrievers_and_weights():
+    """build_ensemble_retriever wires BM25+Semantic into an EnsembleRetriever with the given weights."""
     bm25 = MagicMock()
     bm25.search.return_value = [
         {
@@ -108,6 +111,7 @@ def test_build_ensemble_returns_ensemble_with_two_retrievers_and_weights():
 
 
 def test_wrap_retriever_dispatches_by_name():
+    """wrap_retriever returns the correct LangChain retriever class for each supported name."""
     bm25 = MagicMock()
     semantic = MagicMock()
 
@@ -117,5 +121,6 @@ def test_wrap_retriever_dispatches_by_name():
 
 
 def test_wrap_retriever_rejects_unknown_name():
+    """wrap_retriever raises ValueError when the retriever name is unrecognized."""
     with pytest.raises(ValueError, match="Unknown retriever name"):
         wrap_retriever("Bogus", MagicMock(), MagicMock())

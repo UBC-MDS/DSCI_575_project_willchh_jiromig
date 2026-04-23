@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 
 def test_web_search_returns_empty_string_when_api_key_missing(monkeypatch):
+    """web_search returns an empty string when TAVILY_API_KEY is unset."""
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
     from src.tools import web_search
 
@@ -11,6 +12,7 @@ def test_web_search_returns_empty_string_when_api_key_missing(monkeypatch):
 
 
 def test_web_search_concatenates_snippets_when_tavily_returns_results(monkeypatch):
+    """web_search joins Tavily result snippets with newlines."""
     monkeypatch.setenv("TAVILY_API_KEY", "fake-key")
 
     fake_response = {
@@ -34,6 +36,7 @@ def test_web_search_concatenates_snippets_when_tavily_returns_results(monkeypatc
 
 
 def test_web_search_returns_empty_string_when_results_missing(monkeypatch):
+    """web_search returns an empty string when Tavily yields no results."""
     monkeypatch.setenv("TAVILY_API_KEY", "fake-key")
     fake_client = MagicMock()
     fake_client.search.return_value = {"results": []}
@@ -47,6 +50,7 @@ def test_web_search_returns_empty_string_when_results_missing(monkeypatch):
 
 
 def test_tools_export_includes_web_search():
+    """The public TOOLS list contains exactly the web_search tool."""
     from src.tools import TOOLS, web_search
 
     assert web_search in TOOLS
@@ -54,6 +58,7 @@ def test_tools_export_includes_web_search():
 
 
 def test_web_search_snippets_returns_empty_list_when_api_key_missing(monkeypatch):
+    """web_search_snippets returns an empty list when TAVILY_API_KEY is unset."""
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
     from src.tools import web_search_snippets
 
@@ -61,6 +66,7 @@ def test_web_search_snippets_returns_empty_list_when_api_key_missing(monkeypatch
 
 
 def test_web_search_snippets_returns_list_when_tavily_returns_results(monkeypatch):
+    """web_search_snippets returns the Tavily snippets as a list of strings."""
     monkeypatch.setenv("TAVILY_API_KEY", "fake-key")
     fake_response = {
         "results": [
@@ -83,6 +89,7 @@ def test_web_search_snippets_returns_list_when_tavily_returns_results(monkeypatc
 
 
 def test_web_search_snippets_returns_empty_list_when_results_missing(monkeypatch):
+    """web_search_snippets returns an empty list when Tavily yields no results."""
     monkeypatch.setenv("TAVILY_API_KEY", "fake-key")
     fake_client = MagicMock()
     fake_client.search.return_value = {"results": []}
@@ -94,6 +101,7 @@ def test_web_search_snippets_returns_empty_list_when_results_missing(monkeypatch
 
 
 def test_web_search_snippets_filters_empty_content(monkeypatch):
+    """web_search_snippets drops results whose content field is empty or missing."""
     monkeypatch.setenv("TAVILY_API_KEY", "fake-key")
     fake_client = MagicMock()
     fake_client.search.return_value = {

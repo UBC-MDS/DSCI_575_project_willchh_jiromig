@@ -138,6 +138,7 @@ def display_result(result: dict, idx: int, query: str, mode: str) -> None:
 
 
 def _render_search_tab(retrievers: dict) -> None:
+    """Render the Search tab: sidebar controls, sample selector, and results list."""
     with st.sidebar:
         st.header("Search Settings")
         mode = st.radio("Search Mode", list(retrievers.keys()), key="search_mode")
@@ -170,6 +171,7 @@ def _render_search_tab(retrievers: dict) -> None:
 
 
 def _render_rag_tab(retrievers: dict) -> None:
+    """Render the RAG tab: sidebar controls, query input, answer, and sources."""
     has_tavily = bool(os.environ.get("TAVILY_API_KEY"))
 
     with st.sidebar:
@@ -238,6 +240,7 @@ def _render_rag_tab(retrievers: dict) -> None:
     has_web = bool(result.get("web_sources")) and not result.get("web_warning")
 
     def _render_product_sources() -> None:
+        """Render the retrieved product-source cards beneath the answer."""
         for idx, src in enumerate(result["sources"], start=1):
             result_dict = {
                 "parent_asin": src.get("parent_asin"),
@@ -250,6 +253,7 @@ def _render_rag_tab(retrievers: dict) -> None:
             display_result(result_dict, idx, query, mode=mode_label)
 
     def _render_web_sources() -> None:
+        """Render the Tavily snippet cards beneath the answer."""
         st.caption("Tavily snippets that fed into the answer.")
         for i, snippet in enumerate(result["web_sources"], start=1):
             with st.container(border=True):
@@ -271,6 +275,7 @@ def _render_rag_tab(retrievers: dict) -> None:
 
 
 def main():
+    """Entry point: configure the Streamlit page and render the Search and RAG tabs."""
     st.set_page_config(page_title="Amazon Beauty Search", layout="wide")
     st.title("Amazon Beauty Product Search")
 

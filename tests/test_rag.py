@@ -5,6 +5,7 @@ from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
 
 def _stub_retrievers():
+    """Build MagicMock BM25 and semantic retrievers with canned single-result searches."""
     bm25 = MagicMock()
     bm25.search.return_value = [
         {
@@ -31,6 +32,7 @@ def _stub_retrievers():
 
 
 def test_rag_pipeline_requires_hf_token_when_no_llm_injected(monkeypatch):
+    """Constructing a pipeline without an LLM raises when HF_TOKEN is unset."""
     monkeypatch.delenv("HF_TOKEN", raising=False)
     from src.rag_pipeline import RAGPipeline
 
@@ -42,6 +44,7 @@ def test_rag_pipeline_requires_hf_token_when_no_llm_injected(monkeypatch):
 
 
 def test_rag_pipeline_answer_returns_text_and_sources():
+    """answer() returns the LLM text alongside source metadata and empty web fields."""
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["Use [B001] for brightening."])
 
@@ -61,6 +64,7 @@ def test_rag_pipeline_answer_returns_text_and_sources():
 
 
 def test_rag_pipeline_answer_without_web_search_skips_tool_call(monkeypatch):
+    """With use_web_search=False the pipeline must not invoke web_search_snippets."""
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["ok"])
 
@@ -68,6 +72,7 @@ def test_rag_pipeline_answer_without_web_search_skips_tool_call(monkeypatch):
     from src.rag_pipeline import RAGPipeline
 
     def _boom(*args, **kwargs):
+        """Fail loudly if web_search_snippets is unexpectedly called."""
         raise AssertionError("web_search_snippets should not be called when toggle is off")
 
     monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", _boom)
@@ -80,6 +85,7 @@ def test_rag_pipeline_answer_without_web_search_skips_tool_call(monkeypatch):
 
 
 def test_rag_pipeline_answer_with_web_search_includes_snippets(monkeypatch):
+    """With use_web_search=True, Tavily snippets surface in the answer payload."""
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["answer with [W1]"])
 
@@ -101,12 +107,16 @@ def test_rag_pipeline_answer_with_web_search_includes_snippets(monkeypatch):
 
 
 def test_rag_pipeline_answer_passes_web_context_into_prompt(monkeypatch):
+    """Web snippets reach the rendered user message without [W#] citation tags."""
     bm25, semantic = _stub_retrievers()
 
     captured = {}
 
     class _CapturingLLM(FakeListChatModel):
+        """Fake LLM that records the rendered messages before delegating to the parent."""
+
         def invoke(self, messages, *args, **kwargs):
+            """Capture the rendered prompt messages, then return the canned response."""
             captured["messages"] = messages
             return super().invoke(messages, *args, **kwargs)
 
@@ -134,6 +144,7 @@ def test_rag_pipeline_answer_passes_web_context_into_prompt(monkeypatch):
 
 
 def test_rag_pipeline_caps_hybrid_sources_at_top_k():
+    """Hybrid retrieval must be capped at top_k sources in the answer payload."""
     bm25 = MagicMock()
     bm25.search.return_value = [
         {
@@ -171,6 +182,7 @@ def test_rag_pipeline_caps_hybrid_sources_at_top_k():
 
 
 def test_rag_pipeline_forwards_top_k_to_web_search(monkeypatch):
+    """top_k is forwarded to web_search_snippets as max_results."""
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["ok"])
 
@@ -180,6 +192,7 @@ def test_rag_pipeline_forwards_top_k_to_web_search(monkeypatch):
     captured = {}
 
     def _capture(q, max_results=3):
+        """Record the max_results the pipeline forwards into web_search_snippets."""
         captured["max_results"] = max_results
         return ["snippet"]
 
@@ -194,6 +207,7 @@ def test_rag_pipeline_forwards_top_k_to_web_search(monkeypatch):
 
 
 def test_rag_pipeline_answer_catches_web_search_exception_and_warns(monkeypatch):
+    """A Tavily failure is caught and surfaced via web_warning without aborting the answer."""
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["fallback answer"])
 
@@ -201,6 +215,7 @@ def test_rag_pipeline_answer_catches_web_search_exception_and_warns(monkeypatch)
     from src.rag_pipeline import RAGPipeline
 
     def _raise(q, max_results=3):
+        """Simulate a Tavily failure by raising when web_search_snippets is called."""
         raise RuntimeError("tavily boom")
 
     monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", _raise)
@@ -215,6 +230,7 @@ def test_rag_pipeline_answer_catches_web_search_exception_and_warns(monkeypatch)
 
 
 def test_rag_pipeline_uses_selected_prompt_variant():
+    """The prompt_name argument selects the corresponding PROMPT_VARIANTS template."""
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["x"])
 
@@ -243,6 +259,7 @@ def test_rag_pipeline_uses_selected_prompt_variant():
 
 
 def test_rag_pipeline_rejects_unknown_prompt_name():
+    """An unknown prompt_name raises KeyError during pipeline construction."""
     bm25, semantic = _stub_retrievers()
     fake_llm = FakeListChatModel(responses=["x"])
 
@@ -259,6 +276,7 @@ def test_rag_pipeline_rejects_unknown_prompt_name():
 
 
 def test_load_llm_uses_token_from_env(monkeypatch):
+    """load_llm reads HF_TOKEN from the environment and forwards it to HuggingFaceEndpoint."""
     monkeypatch.setenv("HF_TOKEN", "fake-token")
     from unittest.mock import patch
 

@@ -7,6 +7,7 @@ from src.semantic import SemanticRetriever
 
 @pytest.fixture()
 def hybrid_retriever(fake_corpus):
+    """Build a HybridRetriever wrapping BM25 and Semantic over the fake corpus."""
     bm25 = BM25Retriever()
     bm25.build_index(fake_corpus)
     semantic = SemanticRetriever()
@@ -15,6 +16,7 @@ def hybrid_retriever(fake_corpus):
 
 
 def test_search_returns_correct_shape(hybrid_retriever):
+    """Hybrid search results expose parent_asin, title, and score for each hit."""
     results = hybrid_retriever.search("vitamin C serum", top_k=3)
     assert len(results) == 3
     for result in results:
@@ -24,17 +26,20 @@ def test_search_returns_correct_shape(hybrid_retriever):
 
 
 def test_search_scores_sorted_descending(hybrid_retriever):
+    """Hybrid results are returned in descending order by combined score."""
     results = hybrid_retriever.search("moisturizer for dry skin", top_k=5)
     scores = [r["score"] for r in results]
     assert scores == sorted(scores, reverse=True)
 
 
 def test_full_bm25_weight(hybrid_retriever):
+    """bm25_weight=1.0 recovers the BM25-only top result."""
     hybrid_results = hybrid_retriever.search("coconut oil shampoo", top_k=3, bm25_weight=1.0)
     assert hybrid_results[0]["parent_asin"] == "B002"
 
 
 def test_full_semantic_weight(hybrid_retriever):
+    """bm25_weight=0.0 lets the semantic retriever's paraphrase match surface."""
     hybrid_results = hybrid_retriever.search(
         "something to protect from sun damage", top_k=3, bm25_weight=0.0
     )
@@ -43,6 +48,7 @@ def test_full_semantic_weight(hybrid_retriever):
 
 
 def test_default_weight_is_balanced(hybrid_retriever):
+    """Default hybrid weighting produces normalized scores in [0, 1]."""
     results = hybrid_retriever.search("face care", top_k=5)
     assert len(results) == 5
     scores = [r["score"] for r in results]
