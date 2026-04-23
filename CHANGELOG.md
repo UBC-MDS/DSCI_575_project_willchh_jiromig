@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.0] - (2026-04-22)
+
+### Added
+- LLM comparison experiment: `qwen3:1.7b` (1.7B, Ollama local) vs `Meta-Llama-3-8B-Instruct` (8B, HF API) across 5 queries with identical retrieval and prompt ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Final exploration notebook (`notebooks/milestone3_final.ipynb`) with LLM comparison and Tavily web search tool demo (3 queries) ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Final discussion (`results/final_discussion.md`) covering dataset scaling, LLM experiment, tool integration, code quality, and cloud deployment plan ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Cloud deployment plan for AWS grounded in DSCI 525 services: S3 for artifacts, Elastic Beanstalk (load-balanced) for the Streamlit app, HF Inference API by default with SageMaker as the self-hosted alternative ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- `langchain-ollama` dependency for local model inference via Ollama ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Ollama setup instructions in README (macOS, Linux, Windows) ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- `temperature`, `seed`, and `do_sample` arguments on `load_llm` for reproducible generation (`src/rag_pipeline.py`) ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Eval output artifacts for the final milestone: `data/eval_outputs/llm_comparison.json` and `data/eval_outputs/tool_demo.json` ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- `web_search_snippets(query, k)` helper returning a list of Tavily snippets for RAG prompt augmentation (`src/tools.py`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- `build_web_context` helper and `{web_context}` template variable wired into all RAG prompt variants (`src/prompts.py`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- `use_web_search` flag on `RAGPipeline.answer` that augments the prompt with Tavily snippets and soft-fails when `TAVILY_API_KEY` is missing or the call raises (`src/rag_pipeline.py`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- Web-search checkbox in the Streamlit RAG tab rendering retrieved products and web snippets side-by-side (`app/app.py`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- Sample query dropdowns in the Search and RAG tabs for quick demo inputs (`app/app.py`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- Test coverage for `web_search_snippets` (happy path, empty results, missing key), `build_web_context`, `RAGPipeline.answer` web-search on/off/exception branches, `top_k` forwarding, and hybrid source cap ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+
+### Changed
+- Added docstrings to all public functions and classes in `src/` ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Updated `README.md` with Qwen3 comparison model, Ollama in tech stack, final milestone files in repository structure, and the new `data/eval_outputs/` artifacts ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- Pre-built index download instructions in README now point at the `v0.3.0` GitHub Release instead of `v0.1.0` ([#46](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/46))
+- `RAGPipeline.answer` forwards `top_k` to the web-search tool and caps hybrid sources at `top_k` (`src/rag_pipeline.py`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- Dropped `[Wn]` labels from web context and removed the corresponding citation mandate from the `strict_citation` prompt (`src/prompts.py`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- README: added `web_search` tool to the mermaid workflow diagram and promoted the environment-variables section (`README.md`) ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- Added 1-line docstrings to `app/` and `tests/` functions ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+- `results/final_discussion.md` updated to reflect the Streamlit web-search wiring ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+
+### Fixed
+- `.gitignore` now excludes local eval artifacts `data/eval_outputs/llm_comparison.json` and `data/eval_outputs/tool_demo.json` ([#47](https://github.com/UBC-MDS/DSCI_575_project_willchh_jiromig/pull/47))
+
 ## [v0.2.0] - (2026-04-18)
 
 ### Added

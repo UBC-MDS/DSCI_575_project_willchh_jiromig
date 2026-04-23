@@ -10,9 +10,12 @@ load_dotenv()
 
 
 class SemanticRetriever:
+    """Embedding-based retriever using sentence-transformers and FAISS."""
+
     MODEL_NAME = "all-MiniLM-L6-v2"
 
     def __init__(self):
+        """Initialize the sentence-transformer model with empty index."""
         self.model = SentenceTransformer(self.MODEL_NAME)
         self.faiss_index = None
         self.corpus = []

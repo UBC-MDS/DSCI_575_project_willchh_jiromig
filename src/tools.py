@@ -27,4 +27,16 @@ def web_search(query: str, max_results: int = 3) -> str:
     return "\n".join(snippets)
 
 
+def web_search_snippets(query: str, max_results: int = 3) -> list[str]:
+    """Return Tavily snippets as a list so callers can label them individually.
+    Empty list when TAVILY_API_KEY is unset or the Tavily client is unavailable.
+    """
+    api_key = os.environ.get("TAVILY_API_KEY")
+    if not api_key or not _HAS_TAVILY:
+        return []
+    client = TavilyClient(api_key=api_key)
+    results = client.search(query, max_results=max_results)
+    return [r.get("content", "") for r in results.get("results", []) if r.get("content")]
+
+
 TOOLS = [web_search]

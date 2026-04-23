@@ -17,26 +17,31 @@ from src.utils import (
 
 
 def test_tokenize_basic():
+    """Tokenizer lowercases and splits on whitespace."""
     result = tokenize("Hello World")
     assert result == ["hello", "world"]
 
 
 def test_tokenize_punctuation():
+    """Tokenizer strips punctuation and splits on hyphens."""
     result = tokenize("anti-aging cream, 100% organic!")
     assert result == ["anti", "aging", "cream", "100", "organic"]
 
 
 def test_tokenize_empty_string():
+    """Empty input produces an empty token list."""
     result = tokenize("")
     assert result == []
 
 
 def test_tokenize_extra_whitespace():
+    """Extra whitespace is collapsed away during tokenization."""
     result = tokenize("  vitamin   C   serum  ")
     assert result == ["vitamin", "c", "serum"]
 
 
 def test_tokenize_removes_stopwords():
+    """Common English stopwords are dropped from the token list."""
     result = tokenize("this is a great moisturizer for the skin")
     assert "this" not in result
     assert "is" not in result
@@ -49,6 +54,7 @@ def test_tokenize_removes_stopwords():
 
 
 def test_tokenize_lemmatizes_words():
+    """Plural nouns are lemmatized to their singular base form."""
     result = tokenize("moisturizing creams and lotions")
     assert "moisturizing" in result or "moisturize" in result
     assert "cream" in result  # creams -> cream
@@ -56,6 +62,7 @@ def test_tokenize_lemmatizes_words():
 
 
 def test_tokenize_slash_splitting():
+    """Forward slashes split compound tokens into separate words."""
     result = tokenize("shampoo/conditioner combo")
     assert "shampoo" in result
     assert "conditioner" in result
@@ -63,6 +70,7 @@ def test_tokenize_slash_splitting():
 
 
 def test_build_text_all_fields():
+    """build_text concatenates title, description, and features in order."""
     product = {
         "title": "Vitamin C Serum",
         "description": "A brightening serum",
@@ -73,6 +81,7 @@ def test_build_text_all_fields():
 
 
 def test_build_text_missing_description():
+    """A missing description is skipped without raising."""
     product = {
         "title": "Vitamin C Serum",
         "features": ["20% vitamin C"],
@@ -82,6 +91,7 @@ def test_build_text_missing_description():
 
 
 def test_build_text_empty_features():
+    """An empty features list contributes nothing to the built text."""
     product = {
         "title": "Vitamin C Serum",
         "description": "A brightening serum",
@@ -92,6 +102,7 @@ def test_build_text_empty_features():
 
 
 def test_build_text_title_only():
+    """A product with only a title yields just the title."""
     product = {"title": "Vitamin C Serum"}
     result = build_text(product)
     assert result == "Vitamin C Serum"
