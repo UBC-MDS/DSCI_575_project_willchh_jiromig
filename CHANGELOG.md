@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `use_web_search` flag on `RAGPipeline.answer` that augments the prompt with Tavily snippets and soft-fails when `TAVILY_API_KEY` is missing or the call raises (`src/rag_pipeline.py`)
 - Web-search checkbox in the Streamlit RAG tab rendering retrieved products and web snippets side-by-side (`app/app.py`)
 - Sample query dropdowns in the Search and RAG tabs for quick demo inputs (`app/app.py`)
-- Design spec for the web-search Streamlit wiring (`docs/superpowers/plans/2026-04-22-web-search-streamlit-design.md`)
 - Test coverage for `web_search_snippets` (happy path, empty results, missing key), `build_web_context`, `RAGPipeline.answer` web-search on/off/exception branches, `top_k` forwarding, and hybrid source cap
 
 ### Changed
