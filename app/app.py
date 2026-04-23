@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,49 @@ from src.semantic import SemanticRetriever
 BASE_DIR = Path(__file__).resolve().parent.parent
 INDICES_DIR = BASE_DIR / "indices"
 FEEDBACK_PATH = BASE_DIR / "data" / "feedback.csv"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
+
+SAMPLE_PLACEHOLDER = "— choose a sample query —"
+
+WEB_DEMO_QUERIES = [
+    "best drugstore sunscreen 2026 dermatologist recommended",
+    "best retinol cream 2026 under $30",
+    "best vitamin C serum 2026 for hyperpigmentation",
+]
+
+
+@st.cache_data
+def load_search_samples() -> dict[str, str]:
+    """Load curated retrieval queries from ground_truth.csv, labeled by difficulty."""
+    path = PROCESSED_DIR / "ground_truth.csv"
+    if not path.exists():
+        return {}
+    out: dict[str, str] = {}
+    with open(path, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            out[f"[{row['difficulty']}] {row['query']}"] = row["query"]
+    return out
+
+
+@st.cache_data
+def load_rag_samples() -> dict[str, str]:
+    """Load curated RAG queries plus product-focused web-demo queries."""
+    path = PROCESSED_DIR / "rag_queries.csv"
+    out: dict[str, str] = {}
+    if path.exists():
+        with open(path, encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                out[f"[{row['category']}] {row['query']}"] = row["query"]
+    for q in WEB_DEMO_QUERIES:
+        out[f"[web-demo] {q}"] = q
+    return out
+
+
+def _apply_sample(mapping: dict[str, str], target_key: str, selector_key: str) -> None:
+    """on_change callback: copy the selected sample query into the text-input state."""
+    choice = st.session_state.get(selector_key)
+    if choice and choice in mapping:
+        st.session_state[target_key] = mapping[choice]
 
 
 @st.cache_resource
@@ -101,6 +145,16 @@ def _render_search_tab(retrievers: dict) -> None:
             "Number of results", min_value=1, max_value=10, value=5, key="search_topk"
         )
 
+    samples = load_search_samples()
+    st.selectbox(
+        "Try a sample query",
+        options=[SAMPLE_PLACEHOLDER] + list(samples.keys()),
+        key="search_sample",
+        on_change=_apply_sample,
+        args=(samples, "search_query", "search_sample"),
+        help="Selecting a sample populates the search box; you can still edit it before submitting.",
+    )
+
     query = st.text_input(
         "Enter your search query",
         placeholder="e.g., best moisturizer for sensitive skin",
@@ -132,6 +186,19 @@ def _render_rag_tab(retrievers: dict) -> None:
             help="Set TAVILY_API_KEY in .env to enable.",
             key="rag_tools",
         )
+
+    samples = load_rag_samples()
+    st.selectbox(
+        "Try a sample query",
+        options=[SAMPLE_PLACEHOLDER] + list(samples.keys()),
+        key="rag_sample",
+        on_change=_apply_sample,
+        args=(samples, "rag_query", "rag_sample"),
+        help=(
+            "Selecting a sample populates the question box; you can still edit it before "
+            "submitting. [web-demo] queries need the Tavily toggle on to be answered well."
+        ),
+    )
 
     query = st.text_input(
         "Ask a question about Amazon Beauty products",
@@ -183,11 +250,12 @@ def _render_rag_tab(retrievers: dict) -> None:
             display_result(result_dict, idx, query, mode=mode_label)
 
     def _render_web_sources() -> None:
-        st.caption("Back the [W1], [W2], … citations in the answer above.")
+        st.caption("Tavily snippets that fed into the answer.")
         for i, snippet in enumerate(result["web_sources"], start=1):
             with st.container(border=True):
-                st.markdown(f"**[W{i}]**")
-                st.write(snippet)
+                st.markdown(f"**Source {i}**")
+                cleaned = re.sub(r"(?m)^#{1,6}\s*", "", snippet)
+                st.text(cleaned)
 
     if has_web:
         col_web, col_prod = st.columns(2)
