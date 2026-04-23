@@ -142,10 +142,11 @@ def _render_rag_tab(retrievers: dict) -> None:
     if not query:
         return
 
+    use_web_search = bool(st.session_state.get("rag_tools", False))
     pipeline = get_rag_pipeline(retriever_name, prompt_name, top_k)
     with st.spinner("Generating answer..."):
         try:
-            result = pipeline.answer(query)
+            result = pipeline.answer(query, use_web_search=use_web_search)
         except RuntimeError as exc:
             st.error(str(exc))
             return
@@ -163,17 +164,42 @@ def _render_rag_tab(retrievers: dict) -> None:
     else:
         st.info(result["answer"])
 
-    st.subheader("Sources")
-    for idx, src in enumerate(result["sources"], start=1):
-        result_dict = {
-            "parent_asin": src.get("parent_asin"),
-            "title": src.get("title"),
-            "text": src.get("page_content", ""),
-            "price": src.get("price"),
-            "average_rating": src.get("average_rating"),
-            "score": src.get("score"),
-        }
-        display_result(result_dict, idx, query, mode=f"rag:{retriever_name}:{prompt_name}")
+    if result.get("web_warning"):
+        st.warning(result["web_warning"])
+
+    mode_label = f"rag:{retriever_name}:{prompt_name}"
+    has_web = bool(result.get("web_sources")) and not result.get("web_warning")
+
+    def _render_product_sources() -> None:
+        for idx, src in enumerate(result["sources"], start=1):
+            result_dict = {
+                "parent_asin": src.get("parent_asin"),
+                "title": src.get("title"),
+                "text": src.get("page_content", ""),
+                "price": src.get("price"),
+                "average_rating": src.get("average_rating"),
+                "score": src.get("score"),
+            }
+            display_result(result_dict, idx, query, mode=mode_label)
+
+    def _render_web_sources() -> None:
+        st.caption("Back the [W1], [W2], … citations in the answer above.")
+        for i, snippet in enumerate(result["web_sources"], start=1):
+            with st.container(border=True):
+                st.markdown(f"**[W{i}]**")
+                st.write(snippet)
+
+    if has_web:
+        col_web, col_prod = st.columns(2)
+        with col_web:
+            st.subheader("Web Sources (Tavily)")
+            _render_web_sources()
+        with col_prod:
+            st.subheader("Product Sources")
+            _render_product_sources()
+    else:
+        st.subheader("Sources")
+        _render_product_sources()
 
 
 def main():
