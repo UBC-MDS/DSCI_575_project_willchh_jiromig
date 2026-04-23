@@ -56,6 +56,95 @@ def test_rag_pipeline_answer_returns_text_and_sources():
     assert src["parent_asin"] == "B001"
     assert src["title"] == "Vitamin C Serum"
     assert src["page_content"] == "brightening serum with vitamin C"
+    assert result["web_sources"] == []
+    assert result["web_warning"] is None
+
+
+def test_rag_pipeline_answer_without_web_search_skips_tool_call(monkeypatch):
+    bm25, semantic = _stub_retrievers()
+    fake_llm = FakeListChatModel(responses=["ok"])
+
+    from src import rag_pipeline as rag_pipeline_module
+    from src.rag_pipeline import RAGPipeline
+
+    def _boom(*args, **kwargs):
+        raise AssertionError("web_search_snippets should not be called when toggle is off")
+
+    monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", _boom)
+
+    pipeline = RAGPipeline(bm25=bm25, semantic=semantic, retriever_name="BM25", llm=fake_llm)
+    result = pipeline.answer("vitamin c")
+
+    assert result["web_sources"] == []
+    assert result["web_warning"] is None
+
+
+def test_rag_pipeline_answer_with_web_search_includes_snippets(monkeypatch):
+    bm25, semantic = _stub_retrievers()
+    fake_llm = FakeListChatModel(responses=["answer with [W1]"])
+
+    from src import rag_pipeline as rag_pipeline_module
+    from src.rag_pipeline import RAGPipeline
+
+    monkeypatch.setattr(
+        rag_pipeline_module, "web_search_snippets", lambda q: ["snippet alpha", "snippet beta"]
+    )
+
+    pipeline = RAGPipeline(bm25=bm25, semantic=semantic, retriever_name="BM25", llm=fake_llm)
+    result = pipeline.answer("vitamin c", use_web_search=True)
+
+    assert result["web_sources"] == ["snippet alpha", "snippet beta"]
+    assert result["web_warning"] is None
+    assert result["answer"] == "answer with [W1]"
+
+
+def test_rag_pipeline_answer_passes_web_context_into_prompt(monkeypatch):
+    bm25, semantic = _stub_retrievers()
+
+    captured = {}
+
+    class _CapturingLLM(FakeListChatModel):
+        def invoke(self, messages, *args, **kwargs):
+            captured["messages"] = messages
+            return super().invoke(messages, *args, **kwargs)
+
+    fake_llm = _CapturingLLM(responses=["ok"])
+
+    from src import rag_pipeline as rag_pipeline_module
+    from src.rag_pipeline import RAGPipeline
+
+    monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", lambda q: ["fresh data"])
+
+    pipeline = RAGPipeline(bm25=bm25, semantic=semantic, retriever_name="BM25", llm=fake_llm)
+    pipeline.answer("q", use_web_search=True)
+
+    rendered = captured["messages"]
+    user_text = (
+        rendered.messages[-1].content if hasattr(rendered, "messages") else rendered[-1].content
+    )
+    assert "Web Context:" in user_text
+    assert "[W1] fresh data" in user_text
+
+
+def test_rag_pipeline_answer_catches_web_search_exception_and_warns(monkeypatch):
+    bm25, semantic = _stub_retrievers()
+    fake_llm = FakeListChatModel(responses=["fallback answer"])
+
+    from src import rag_pipeline as rag_pipeline_module
+    from src.rag_pipeline import RAGPipeline
+
+    def _raise(q):
+        raise RuntimeError("tavily boom")
+
+    monkeypatch.setattr(rag_pipeline_module, "web_search_snippets", _raise)
+
+    pipeline = RAGPipeline(bm25=bm25, semantic=semantic, retriever_name="BM25", llm=fake_llm)
+    result = pipeline.answer("vitamin c", use_web_search=True)
+
+    assert result["web_sources"] == []
+    assert result["web_warning"] is not None
+    assert "tavily boom" in result["web_warning"]
+    assert result["answer"] == "fallback answer"
 
 
 def test_rag_pipeline_uses_selected_prompt_variant():
@@ -80,8 +169,8 @@ def test_rag_pipeline_uses_selected_prompt_variant():
     )
 
     assert strict.prompt is not json_pipe.prompt
-    s_sys = strict.prompt.format_messages(context="x", question="y")[0].content
-    j_sys = json_pipe.prompt.format_messages(context="x", question="y")[0].content
+    s_sys = strict.prompt.format_messages(context="x", web_context="", question="y")[0].content
+    j_sys = json_pipe.prompt.format_messages(context="x", web_context="", question="y")[0].content
     assert "ASIN" in s_sys
     assert "JSON" in j_sys.upper()
 
